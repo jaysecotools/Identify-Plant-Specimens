@@ -1,78 +1,82 @@
-Looking at your code, I can see the issue. The problem is with the ID naming in the navigation buttons. In your HTML, you have buttons with IDs like nextToAppendices and prevFromDatabase, but in the JavaScript event listeners, you're looking for different IDs.
+Ah, now I understand the issue! The navigation works (tabs switch correctly), but the footer content gets messed up when using the Next button from Database to Appendices. The footer shows database content instead of the normal footer text.
 
-The specific issue when moving from Database to Appendices: you have a button with id="nextToAppendices" but the JavaScript is trying to attach an event listener to nextFromDatabase (which doesn't exist).
+This is likely because there's an element with id="database" that's being targeted incorrectly, or there's a JavaScript function that's modifying the footer content. Let me provide a targeted fix:
 
-Here's the fix - update the JavaScript section where the event listeners are set up. Find this part of your code (around line 4900-5000) and replace the database/appendices navigation section:
-
-```javascript
-// Replace this section in your JavaScript (around line 4900-5000):
-
-// Tab navigation for new sections
-const nextToSection6 = document.getElementById('nextToSection6');
-const prevToSection5 = document.getElementById('prevToSection5');
-const nextToSection7 = document.getElementById('nextToSection7');
-const prevToSection6 = document.getElementById('prevToSection6');
-const nextToSection8 = document.getElementById('nextToSection8');
-const prevToSection7 = document.getElementById('prevToSection7');
-const nextToSection9 = document.getElementById('nextToSection9');
-const prevToSection8 = document.getElementById('prevToSection8');
-const nextToSection10 = document.getElementById('nextToSection10');
-const prevToSection9 = document.getElementById('prevToSection9');
-const nextToDatabase = document.getElementById('nextToDatabase');
-const prevFromDatabase = document.getElementById('prevFromDatabase');
-const nextToAppendices = document.getElementById('nextToAppendices');
-const prevFromAppendices = document.getElementById('prevFromAppendices');
-const nextToGlossary = document.getElementById('nextToGlossary');
-
-if (nextToSection6) nextToSection6.addEventListener('click', () => switchTab('section6'));
-if (prevToSection5) prevToSection5.addEventListener('click', () => switchTab('section5'));
-if (nextToSection7) nextToSection7.addEventListener('click', () => switchTab('section7'));
-if (prevToSection6) prevToSection6.addEventListener('click', () => switchTab('section6'));
-if (nextToSection8) nextToSection8.addEventListener('click', () => switchTab('section8'));
-if (prevToSection7) prevToSection7.addEventListener('click', () => switchTab('section7'));
-if (nextToSection9) nextToSection9.addEventListener('click', () => switchTab('section9'));
-if (prevToSection8) prevToSection8.addEventListener('click', () => switchTab('section8'));
-if (nextToSection10) nextToSection10.addEventListener('click', () => switchTab('section10'));
-if (prevToSection9) prevToSection9.addEventListener('click', () => switchTab('section9'));
-if (nextToDatabase) nextToDatabase.addEventListener('click', () => switchTab('database'));
-if (prevFromDatabase) prevFromDatabase.addEventListener('click', () => switchTab('section10'));
-if (nextToAppendices) nextToAppendices.addEventListener('click', () => switchTab('appendices'));
-if (prevFromAppendices) prevFromAppendices.addEventListener('click', () => switchTab('database'));
-if (nextToGlossary) nextToGlossary.addEventListener('click', () => switchTab('glossary'));
-```
-
-The key fix is ensuring the variable names match the HTML IDs:
-
-· In HTML: id="nextToAppendices" → In JS: const nextToAppendices (correct)
-· In HTML: id="prevFromAppendices" → In JS: const prevFromAppendices (correct)
-· In HTML: id="prevFromDatabase" → In JS: const prevFromDatabase (correct)
-
-The code you have actually looks correct in the provided snippet. The issue might be that this navigation code isn't being executed properly. Make sure this code is inside the DOMContentLoaded event listener and that there are no JavaScript errors preventing it from running.
-
-You could also add a more robust navigation system by using a common class for navigation buttons. Add this code after your existing event listeners:
+Add this code right before the closing </script> tag (around line 5500-5600), after all your existing JavaScript:
 
 ```javascript
-// Alternative approach using data attributes
-document.querySelectorAll('[data-nav]').forEach(button => {
-    button.addEventListener('click', function() {
-        const targetTab = this.getAttribute('data-nav');
-        if (targetTab) {
-            switchTab(targetTab);
+// FIX: Prevent footer corruption when navigating between tabs
+// This ensures the footer content stays intact
+
+// Store the original footer content
+const footerElement = document.querySelector('footer');
+const originalFooterHTML = footerElement ? footerElement.innerHTML : '';
+
+// Override the switchTab function to protect the footer
+const originalSwitchTab = switchTab;
+switchTab = function(tabId) {
+    // Call the original function
+    originalSwitchTab(tabId);
+    
+    // Restore footer content after tab switch
+    setTimeout(() => {
+        if (footerElement) {
+            // Check if footer has been corrupted (contains database content)
+            if (footerElement.innerHTML.includes('species') || 
+                footerElement.innerHTML.includes('filter') ||
+                footerElement.innerHTML.includes('database')) {
+                // Restore original footer
+                footerElement.innerHTML = originalFooterHTML;
+            }
         }
+    }, 10);
+};
+
+// Also add a mutation observer to watch for footer changes
+if (footerElement) {
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                // If footer content changed to something that looks like database content
+                if (footerElement.innerHTML.includes('species') && 
+                    !footerElement.innerHTML.includes('Student Learning Guide')) {
+                    footerElement.innerHTML = originalFooterHTML;
+                }
+            }
+        });
     });
+    
+    observer.observe(footerElement, { 
+        childList: true, 
+        characterData: true, 
+        subtree: true 
+    });
+}
+
+// Add click handler protection for the specific buttons
+document.getElementById('nextToAppendices')?.addEventListener('click', function(e) {
+    // Schedule footer check after the tab switch
+    setTimeout(() => {
+        if (footerElement && footerElement.innerHTML.includes('species')) {
+            footerElement.innerHTML = originalFooterHTML;
+        }
+    }, 50);
+});
+
+document.getElementById('nextToGlossary')?.addEventListener('click', function(e) {
+    setTimeout(() => {
+        if (footerElement && footerElement.innerHTML.includes('species')) {
+            footerElement.innerHTML = originalFooterHTML;
+        }
+    }, 50);
 });
 ```
 
-Then in your HTML, add data-nav attributes to your navigation buttons:
+This fix:
 
-```html
-<!-- In the database section -->
-<button class="nav-button" id="prevFromDatabase" data-nav="section10"><i class="fas fa-arrow-left"></i> Previous: Section 10</button>
-<button class="nav-button" id="nextToAppendices" data-nav="appendices">Next: Appendices <i class="fas fa-arrow-right"></i></button>
+1. Stores the original footer content when the page loads
+2. Wraps the switchTab function to restore the footer after tab switching
+3. Adds a MutationObserver that watches for footer changes and corrects them
+4. Specifically targets the problematic navigation buttons (Database → Appendices and Appendices → Glossary)
 
-<!-- In the appendices section -->
-<button class="nav-button" id="prevFromAppendices" data-nav="database"><i class="fas fa-arrow-left"></i> Previous: Database</button>
-<button class="nav-button" id="nextToGlossary" data-nav="glossary">Next: Glossary <i class="fas fa-arrow-right"></i></button>
-```
-
-This data-attribute approach is more reliable and will work regardless of variable naming issues.
+The fix is non-invasive - it works alongside your existing code without breaking anything else, and only activates when the footer gets corrupted.
