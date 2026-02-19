@@ -1,78 +1,32 @@
-I'll look at the threatened species profiles in the database section. The issue is likely with the click handlers for the specimen cards. Let me examine the code.
-
-Looking at your code, I can see the threatened species grid is populated dynamically, but there are no click event listeners attached to the cards. Here's the fix:
-
-Find this section in your JavaScript (around line 5300-5400) where you create the threatened species cards:
-
-```javascript
-// Create threatened species cards
-const threatenedGrid = document.getElementById('threatenedGrid');
-if (threatenedGrid) {
-    const threatenedSpecies = speciesDatabase.filter(s => 
-        s.conservation.includes('Endangered') || 
-        s.conservation.includes('Vulnerable') || 
-        s.conservation.includes('Rare') ||
-        s.conservation.includes('Critically')
-    ).slice(0, 30);
-    
-    threatenedGrid.innerHTML = '';
-    threatenedSpecies.forEach(s => {
-        const card = document.createElement('div');
-        card.className = 'specimen-card';
-        card.setAttribute('role', 'button');
-        card.setAttribute('tabindex', '0');
-        card.setAttribute('aria-label', `${s.species} - ${s.conservation} ${s.family}`);
-        const statusClass = s.conservation.toLowerCase().replace(/[()]/g, '').replace(/ /g, '-');
-        card.innerHTML = `
-            <h4><em>${s.species}</em></h4>
-            <div class="family">${s.family}</div>
-            <p><strong>Habitat:</strong> ${s.habitat}</p>
-            <p><span class="conservation ${statusClass}">${s.conservation}</span></p>
-            <p><small>${s.morphology.substring(0, 60)}...</small></p>
-        `;
-        threatenedGrid.appendChild(card);
-    });
-}
-```
-
-Add click handlers right after appending each card (inside the forEach loop, right after threatenedGrid.appendChild(card);):
-
-```javascript
-// Add click handler for the card
-card.addEventListener('click', function() {
-    // Create a modal or expandable section with full details
-    // For now, let's just show an alert with the full info
-    alert(`
-        ${s.species} (${s.family})
-        
-        Conservation Status: ${s.conservation}
-        
-        Habitat: ${s.habitat}
-        
-        Description: ${s.morphology}
-    `);
-});
-
-// Add keyboard support
-card.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        alert(`
-            ${s.species} (${s.family})
+        // Create threatened species cards
+        const threatenedGrid = document.getElementById('threatenedGrid');
+        if (threatenedGrid) {
+            const threatenedSpecies = speciesDatabase.filter(s => 
+                s.conservation.includes('Endangered') || 
+                s.conservation.includes('Vulnerable') || 
+                s.conservation.includes('Rare') ||
+                s.conservation.includes('Critically')
+            ).slice(0, 30);
             
-            Conservation Status: ${s.conservation}
-            
-            Habitat: ${s.habitat}
-            
-            Description: ${s.morphology}
-        `);
-    }
-});
-```
+            threatenedGrid.innerHTML = '';
+            threatenedSpecies.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'specimen-card';
+                card.setAttribute('role', 'button');
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('aria-label', `${s.species} - ${s.conservation} ${s.family}`);
+                const statusClass = s.conservation.toLowerCase().replace(/[()]/g, '').replace(/ /g, '-');
+                card.innerHTML = `
+                    <h4><em>${s.species}</em></h4>
+                    <div class="family">${s.family}</div>
+                    <p><strong>Habitat:</strong> ${s.habitat}</p>
+                    <p><span class="conservation ${statusClass}">${s.conservation}</span></p>
+                    <p><small>${s.morphology.substring(0, 60)}...</small></p>
+                `;
+                threatenedGrid.appendChild(card);
+            });
+        }
 
-If you want something more elegant than an alert, you could create a modal or expand the card. Here's a simple expandable version:
-
-```javascript
 // Add click handler for the card
 card.addEventListener('click', function() {
     // Toggle expanded view
@@ -93,30 +47,37 @@ card.addEventListener('click', function() {
         card.appendChild(detailDiv);
     }
 });
-```
 
-Also, add this CSS for the card detail (add to your style section):
-
-```css
-.card-detail {
-    margin-top: 10px;
-    padding: 10px;
-    background-color: #f9f9f9;
-    border-radius: 4px;
-    border-left: 3px solid var(--primary-color);
-    animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
+// Add keyboard support
+card.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        alert(`
+            ${s.species} (${s.family})
+            
+            Conservation Status: ${s.conservation}
+            
+            Habitat: ${s.habitat}
+            
+            Description: ${s.morphology}
+        `);
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-```
+});
+        
+        // Initialize search
+        setupSearch();
+        
+        // Initialize progress
+        updateProgress();
+        
+        // Check for saved progress
+        loadProgress();
+        
+        // Set initial aria-current
+        const welcomeLink = document.querySelector('.toc-list a[data-tab="welcome"]');
+        if (welcomeLink) {
+            welcomeLink.setAttribute('aria-current', 'page');
+        }
+    });
 
-The issue was that the cards were created dynamically but never had click event listeners attached to them. The fix above adds both mouse click and keyboard support for accessibility.
+// Enhanced exam functions with model answers
