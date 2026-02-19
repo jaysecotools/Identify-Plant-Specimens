@@ -988,6 +988,64 @@
             margin-bottom: 2rem;
         }
         
+        .model-answer {
+            background-color: #e8f5e9;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            display: none;
+        }
+        
+        .model-answer.show {
+            display: block;
+        }
+        
+        .no-result-message {
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            font-weight: 500;
+        }
+        
+        .printable-template {
+            background: white;
+            padding: 2rem;
+            border: 1px solid #ddd;
+            margin: 1rem 0;
+        }
+        
+        .print-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .print-btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        @media print {
+            .print-btn, .nav-buttons, .sidebar, header, footer {
+                display: none;
+            }
+            
+            .printable-template {
+                border: none;
+                padding: 0;
+            }
+        }
+        
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -1655,6 +1713,10 @@
                             <p id="result-description"></p>
                         </div>
                         
+                        <div id="no-result-message" class="no-result-message" style="display: none;">
+                            <p><i class="fas fa-info-circle"></i> No species matches your selections. Please try different choices.</p>
+                        </div>
+                        
                         <button class="nav-button" onclick="resetKey()" style="margin-top: 1rem;" aria-label="Reset the identification key">Reset Key</button>
                     </div>
                     
@@ -2191,6 +2253,10 @@
                             <p id="rainforest-result-description"></p>
                         </div>
                         
+                        <div id="rainforest-no-result" class="no-result-message" style="display: none;">
+                            <p><i class="fas fa-info-circle"></i> No species matches your selections. Please try different choices.</p>
+                        </div>
+                        
                         <button class="nav-button" onclick="resetRainforestKey()" style="margin-top: 1rem;" aria-label="Reset rainforest key">Reset Key</button>
                     </div>
                     
@@ -2210,6 +2276,10 @@
                             <h4>Identification Result:</h4>
                             <p id="eucalypt-result-text"></p>
                             <p id="eucalypt-result-description"></p>
+                        </div>
+                        
+                        <div id="eucalypt-no-result" class="no-result-message" style="display: none;">
+                            <p><i class="fas fa-info-circle"></i> No species matches your selections. Please try different choices.</p>
                         </div>
                         
                         <button class="nav-button" onclick="resetEucalyptKey()" style="margin-top: 1rem;" aria-label="Reset eucalypt key">Reset Key</button>
@@ -2240,7 +2310,20 @@
                         
                         <label for="key-practice" class="sr-only">Write your dichotomous key here</label>
                         <textarea id="key-practice" rows="8" style="width: 100%; padding: 0.5rem;" placeholder="Write your dichotomous key here..."></textarea>
-                        <button class="quiz-action-button" onclick="alert('Great attempt! Compare with the model answer in the assessment section.')" style="margin-top: 1rem;" aria-label="Check your key">Check Understanding</button>
+                        
+                        <div id="key-model-answer" class="model-answer">
+                            <h5>Model Answer:</h5>
+                            <p><strong>1a.</strong> Bark smooth - <em>Eucalyptus globulus</em><br>
+                            <strong>1b.</strong> Bark rough - go to 2</p>
+                            <p><strong>2a.</strong> Bark fibrous, leaves falcate - <em>Eucalyptus obliqua</em><br>
+                            <strong>2b.</strong> Bark papery or other - go to 3</p>
+                            <p><strong>3a.</strong> Shrub with papery bark, yellow flower spikes - <em>Melaleuca squarrosa</em><br>
+                            <strong>3b.</strong> Shrub without papery bark - go to 4</p>
+                            <p><strong>4a.</strong> Leaves pungent, woody capsule - <em>Leptospermum scoparium</em><br>
+                            <strong>4b.</strong> Green bottlebrush flowers - <em>Callistemon viridiflorus</em></p>
+                        </div>
+                        
+                        <button class="quiz-action-button" onclick="document.getElementById('key-model-answer').classList.toggle('show')" style="margin-top: 1rem;" aria-label="Check your key">Check Understanding</button>
                     </div>
                     
                     <div class="quiz-container" role="region" aria-label="Key usage quiz">
@@ -2276,7 +2359,10 @@
                             <div class="answer-feedback" id="feedback-key-q3" role="alert" aria-live="polite"></div>
                         </div>
                         
-                        <button class="quiz-action-button" onclick="checkKeyQuiz()" aria-label="Check key usage quiz answers">Check Answers</button>
+                        <div class="quiz-actions">
+                            <button class="quiz-action-button" onclick="checkKeyQuiz()" aria-label="Check key usage quiz answers">Check Answers</button>
+                            <button class="quiz-action-button" onclick="showKeyModelAnswers()" aria-label="Show model answers">Show Model Answers</button>
+                        </div>
                         
                         <div class="quiz-results" id="key-quiz-results" role="region" aria-label="Key usage quiz results" aria-live="polite"></div>
                     </div>
@@ -2545,7 +2631,10 @@
                             <div class="answer-feedback" id="feedback-threatened-q3" role="alert" aria-live="polite"></div>
                         </div>
                         
-                        <button class="quiz-action-button" onclick="checkThreatenedQuiz()" aria-label="Check threatened species quiz answers">Check Answers</button>
+                        <div class="quiz-actions">
+                            <button class="quiz-action-button" onclick="checkThreatenedQuiz()" aria-label="Check threatened species quiz answers">Check Answers</button>
+                            <button class="quiz-action-button" onclick="showThreatenedModelAnswers()" aria-label="Show model answers">Show Model Answers</button>
+                        </div>
                         
                         <div class="quiz-results" id="threatened-quiz-results" role="region" aria-label="Threatened species quiz results" aria-live="polite"></div>
                     </div>
@@ -2728,7 +2817,10 @@
                             <div class="answer-feedback" id="feedback-herb-q3" role="alert" aria-live="polite"></div>
                         </div>
                         
-                        <button class="quiz-action-button" onclick="checkHerbQuiz()" aria-label="Check herbarium techniques quiz answers">Check Answers</button>
+                        <div class="quiz-actions">
+                            <button class="quiz-action-button" onclick="checkHerbQuiz()" aria-label="Check herbarium techniques quiz answers">Check Answers</button>
+                            <button class="quiz-action-button" onclick="showHerbModelAnswers()" aria-label="Show model answers">Show Model Answers</button>
+                        </div>
                         
                         <div class="quiz-results" id="herb-quiz-results" role="region" aria-label="Herbarium techniques quiz results" aria-live="polite"></div>
                     </div>
@@ -3019,7 +3111,7 @@
                     <div class="activity-box">
                         <div class="activity-title"><i class="fas fa-file-alt"></i> Plant Identification Report Template</div>
                         
-                        <div style="background: white; padding: 1.5rem; border-radius: 8px;">
+                        <div class="printable-template">
                             <h4 style="color: var(--primary-dark);">PLANT IDENTIFICATION REPORT</h4>
                             
                             <p><strong>Project/Site:</strong> _________________________________________________</p>
@@ -3068,7 +3160,7 @@
                         </div>
                         
                         <div class="save-load-container" style="margin-top: 1rem;">
-                            <button class="save-button" onclick="alert('Template ready to use. Print or save as PDF.')" aria-label="Print template">
+                            <button class="print-btn" onclick="printTemplate()" aria-label="Print template">
                                 <i class="fas fa-print" aria-hidden="true"></i> Print Template
                             </button>
                         </div>
@@ -3214,7 +3306,10 @@
                             <div class="answer-feedback" id="feedback-workplace-q3" role="alert" aria-live="polite"></div>
                         </div>
                         
-                        <button class="quiz-action-button" onclick="checkWorkplaceQuiz()" aria-label="Check workplace tools quiz answers">Check Answers</button>
+                        <div class="quiz-actions">
+                            <button class="quiz-action-button" onclick="checkWorkplaceQuiz()" aria-label="Check workplace tools quiz answers">Check Answers</button>
+                            <button class="quiz-action-button" onclick="showWorkplaceModelAnswers()" aria-label="Show model answers">Show Model Answers</button>
+                        </div>
                         
                         <div class="quiz-results" id="workplace-quiz-results" role="region" aria-label="Workplace tools quiz results" aria-live="polite"></div>
                     </div>
@@ -3295,6 +3390,11 @@
                         <!-- Populated by JavaScript -->
                     </div>
                 </section>
+                
+                <div class="nav-buttons">
+                    <button class="nav-button" id="prevFromDatabase"><i class="fas fa-arrow-left"></i> Previous: Section 10</button>
+                    <button class="nav-button" id="nextToAppendices">Next: Appendices <i class="fas fa-arrow-right"></i></button>
+                </div>
             </div>
             
             <!-- Appendices - Glossary Tab -->
@@ -4160,6 +4260,11 @@
                         <p>A comprehensive <a href="#" data-tab="glossary">Glossary of Botanical Terms</a> with 150+ entries is available in the Appendices section. Click the link to access terms with definitions and Tasmanian examples.</p>
                     </div>
                 </section>
+                
+                <div class="nav-buttons">
+                    <button class="nav-button" id="prevFromAppendices"><i class="fas fa-arrow-left"></i> Previous: Database</button>
+                    <button class="nav-button" id="nextToGlossary">Next: Glossary <i class="fas fa-arrow-right"></i></button>
+                </div>
             </div>
         </main>
     </div>
@@ -4605,6 +4710,7 @@
         const result = document.getElementById('key-result');
         const resultText = document.getElementById('result-text');
         const resultDesc = document.getElementById('result-description');
+        const noResult = document.getElementById('no-result-message');
         
         if (step === 1) {
             step1.style.display = 'none';
@@ -4625,6 +4731,7 @@
                     <div class="key-choice" onclick="keyChoice(2, 'bipinnate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(2, 'bipinnate')">Twice divided (bipinnate)</div>
                 `;
             }
+            if (noResult) noResult.style.display = 'none';
         } else if (step === 2) {
             step2.style.display = 'none';
             
@@ -4648,17 +4755,25 @@
                 result.style.display = 'block';
                 resultText.innerHTML = '<strong>Acacia verticillata</strong> (Prickly Moses)';
                 resultDesc.innerHTML = 'Shrub with whorled phyllodes, yellow flowers, widespread in wet areas.';
+                if (noResult) noResult.style.display = 'none';
                 markSectionComplete('section2');
             } else if (choice === 'pinnate') {
                 result.style.display = 'block';
                 resultText.innerHTML = '<strong>Polystichum proliferum</strong> (Mother Shield Fern)';
                 resultDesc.innerHTML = 'Common fern with pinnate fronds, widespread in wet forests.';
+                if (noResult) noResult.style.display = 'none';
                 markSectionComplete('section2');
             } else if (choice === 'bipinnate') {
                 result.style.display = 'block';
                 resultText.innerHTML = '<strong>Acacia dealbata</strong> (Silver Wattle)';
                 resultDesc.innerHTML = 'Tree with bipinnate leaves, yellow flowers, widespread.';
+                if (noResult) noResult.style.display = 'none';
                 markSectionComplete('section2');
+            } else if (choice === 'palmate') {
+                if (noResult) {
+                    result.style.display = 'none';
+                    noResult.style.display = 'block';
+                }
             }
         } else if (step === 3) {
             step3.style.display = 'none';
@@ -4683,6 +4798,7 @@
                 resultText.innerHTML = '<strong>Bedfordia salicina</strong> (Tasmanian Blanket Leaf)';
                 resultDesc.innerHTML = 'Shrub with crenate margins, white tomentose beneath.';
             }
+            if (noResult) noResult.style.display = 'none';
             markSectionComplete('section2');
         }
     }
@@ -4692,6 +4808,7 @@
         document.getElementById('key-step-2').style.display = 'none';
         document.getElementById('key-step-3').style.display = 'none';
         document.getElementById('key-result').style.display = 'none';
+        document.getElementById('no-result-message').style.display = 'none';
     }
     
     // Leaf morphology quiz
@@ -5158,6 +5275,7 @@
         const result = document.getElementById('rainforest-result');
         const resultText = document.getElementById('rainforest-result-text');
         const resultDesc = document.getElementById('rainforest-result-description');
+        const noResult = document.getElementById('rainforest-no-result');
         
         if (step === 1) {
             step1.style.display = 'none';
@@ -5178,6 +5296,7 @@
                     <div class="key-choice" onclick="rainforestKeyChoice(2, 'cladode')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(2, 'cladode')">Cladodes (flattened stems)</div>
                 `;
             }
+            if (noResult) noResult.style.display = 'none';
         } else if (step === 2) {
             step2.style.display = 'none';
             
@@ -5201,17 +5320,25 @@
                 result.style.display = 'block';
                 resultText.innerHTML = '<strong>Acacia verticillata</strong> (Prickly Moses)';
                 resultDesc.innerHTML = 'Shrub with whorled phyllodes, common in wet areas.';
+                if (noResult) noResult.style.display = 'none';
                 markSectionComplete('section6');
             } else if (choice === 'fern') {
                 result.style.display = 'block';
                 resultText.innerHTML = '<strong>Dicksonia antarctica</strong> (Soft Tree Fern)';
                 resultDesc.innerHTML = 'Large tree fern with pinnate fronds, common in wet forest.';
+                if (noResult) noResult.style.display = 'none';
                 markSectionComplete('section6');
             } else if (choice === 'cladode') {
                 result.style.display = 'block';
                 resultText.innerHTML = '<strong>Phyllocladus aspleniifolius</strong> (Celery-top Pine)';
                 resultDesc.innerHTML = 'Tree with cladodes resembling celery leaves.';
+                if (noResult) noResult.style.display = 'none';
                 markSectionComplete('section6');
+            } else if (choice === 'palmate') {
+                if (noResult) {
+                    result.style.display = 'none';
+                    noResult.style.display = 'block';
+                }
             }
         } else if (step === 3) {
             step3.style.display = 'none';
@@ -5236,6 +5363,7 @@
                 resultText.innerHTML = '<strong>Bedfordia salicina</strong> (Tasmanian Blanket Leaf)';
                 resultDesc.innerHTML = 'Shrub with white tomentose undersides, crenate margins.';
             }
+            if (noResult) noResult.style.display = 'none';
             markSectionComplete('section6');
         }
     }
@@ -5246,6 +5374,7 @@
         document.getElementById('rainforest-key-3').style.display = 'none';
         document.getElementById('rainforest-key-4').style.display = 'none';
         document.getElementById('rainforest-result').style.display = 'none';
+        document.getElementById('rainforest-no-result').style.display = 'none';
     }
     
     function eucalyptKeyChoice(step, choice) {
@@ -5255,6 +5384,7 @@
         const result = document.getElementById('eucalypt-result');
         const resultText = document.getElementById('eucalypt-result-text');
         const resultDesc = document.getElementById('eucalypt-result-description');
+        const noResult = document.getElementById('eucalypt-no-result');
         
         if (step === 1) {
             step1.style.display = 'none';
@@ -5275,19 +5405,25 @@
                     <div class="key-choice" onclick="eucalyptKeyChoice(2, 'ribbon')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'ribbon')">Ribbon bark at base - E. delegatensis</div>
                 `;
             }
+            if (noResult) noResult.style.display = 'none';
         } else if (step === 2) {
             step2.style.display = 'none';
-            result.style.display = 'block';
             
             if (choice === 'globulus') {
+                result.style.display = 'block';
                 resultText.innerHTML = '<strong>Eucalyptus globulus</strong> (Tasmanian Blue Gum)';
                 resultDesc.innerHTML = 'Tall tree with smooth bark, large fruit, juvenile leaves opposite.';
+                if (noResult) noResult.style.display = 'none';
             } else if (choice === 'viminalis') {
+                result.style.display = 'block';
                 resultText.innerHTML = '<strong>Eucalyptus viminalis</strong> (White Gum)';
                 resultDesc.innerHTML = 'Tree with smooth white bark, narrow lanceolate leaves.';
+                if (noResult) noResult.style.display = 'none';
             } else if (choice === 'coccifera') {
+                result.style.display = 'block';
                 resultText.innerHTML = '<strong>Eucalyptus coccifera</strong> (Tasmanian Snow Gum)';
                 resultDesc.innerHTML = 'Alpine tree with smooth white bark, glaucous leaves.';
+                if (noResult) noResult.style.display = 'none';
             } else if (choice === 'stringy') {
                 step3.style.display = 'block';
                 step3.innerHTML = `
@@ -5300,10 +5436,17 @@
                 result.style.display = 'block';
                 resultText.innerHTML = '<strong>Eucalyptus pulchella</strong> (White Peppermint)';
                 resultDesc.innerHTML = 'Small tree with fine fibrous bark, very narrow leaves.';
+                if (noResult) noResult.style.display = 'none';
             } else if (choice === 'ribbon') {
                 result.style.display = 'block';
                 resultText.innerHTML = '<strong>Eucalyptus delegatensis</strong> (Alpine Ash)';
                 resultDesc.innerHTML = 'Tall tree with rough ribbon bark at base, smooth above.';
+                if (noResult) noResult.style.display = 'none';
+            } else {
+                if (noResult) {
+                    result.style.display = 'none';
+                    noResult.style.display = 'block';
+                }
             }
         } else if (step === 3) {
             step3.style.display = 'none';
@@ -5318,7 +5461,13 @@
             } else if (choice === 'tenuiramis') {
                 resultText.innerHTML = '<strong>Eucalyptus tenuiramis</strong> (Silver Peppermint)';
                 resultDesc.innerHTML = 'Tree with glaucous leaves, rough bark, southeast Tasmania.';
+            } else {
+                if (noResult) {
+                    result.style.display = 'none';
+                    noResult.style.display = 'block';
+                }
             }
+            if (noResult) noResult.style.display = 'none';
             markSectionComplete('section6');
         }
     }
@@ -5328,6 +5477,7 @@
         document.getElementById('eucalypt-key-2').style.display = 'none';
         document.getElementById('eucalypt-key-3').style.display = 'none';
         document.getElementById('eucalypt-result').style.display = 'none';
+        document.getElementById('eucalypt-no-result').style.display = 'none';
     }
     
     // Quiz functions for new sections
@@ -5440,6 +5590,31 @@
         
         if (score === 3) {
             markSectionComplete('section6');
+        }
+    }
+    
+    function showKeyModelAnswers() {
+        const modelAnswers = {
+            key1: "Leads",
+            key2: "Indented keys (visually clear hierarchy) and Bracketed keys (compact and efficient)",
+            key3: "Go back to the previous couplet and try the alternative lead"
+        };
+        
+        const feedback1 = document.getElementById('feedback-key-q1');
+        const feedback2 = document.getElementById('feedback-key-q2');
+        const feedback3 = document.getElementById('feedback-key-q3');
+        
+        if (feedback1) {
+            feedback1.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.key1}</div>`;
+            feedback1.style.display = 'block';
+        }
+        if (feedback2) {
+            feedback2.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.key2}</div>`;
+            feedback2.style.display = 'block';
+        }
+        if (feedback3) {
+            feedback3.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.key3}</div>`;
+            feedback3.style.display = 'block';
         }
     }
     
@@ -5558,6 +5733,31 @@
         
         if (score === 3) {
             markSectionComplete('section7');
+        }
+    }
+    
+    function showThreatenedModelAnswers() {
+        const modelAnswers = {
+            threatened1: "Critically Endangered, Endangered, Vulnerable (from highest to lowest risk)",
+            threatened2: "Epacris stuartii (fire, climate change), Caladenia tonellii (habitat loss, weed invasion), Prasophyllum apoxychilum (agricultural development)",
+            threatened3: "Endangered = very high risk of extinction, Vulnerable = high risk of extinction"
+        };
+        
+        const feedback1 = document.getElementById('feedback-threatened-q1');
+        const feedback2 = document.getElementById('feedback-threatened-q2');
+        const feedback3 = document.getElementById('feedback-threatened-q3');
+        
+        if (feedback1) {
+            feedback1.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.threatened1}</div>`;
+            feedback1.style.display = 'block';
+        }
+        if (feedback2) {
+            feedback2.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.threatened2}</div>`;
+            feedback2.style.display = 'block';
+        }
+        if (feedback3) {
+            feedback3.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.threatened3}</div>`;
+            feedback3.style.display = 'block';
         }
     }
     
@@ -5690,6 +5890,31 @@
         
         if (score === 3) {
             markSectionComplete('section8');
+        }
+    }
+    
+    function showHerbModelAnswers() {
+        const modelAnswers = {
+            herb1: "Location, date, habitat, collector name, plant description, GPS coordinates, associated species",
+            herb2: "To prevent mould and ensure even, rapid drying",
+            herb3: "Scientific collection permits from DPIPWE, Parks Tasmania, and landholder permission"
+        };
+        
+        const feedback1 = document.getElementById('feedback-herb-q1');
+        const feedback2 = document.getElementById('feedback-herb-q2');
+        const feedback3 = document.getElementById('feedback-herb-q3');
+        
+        if (feedback1) {
+            feedback1.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.herb1}</div>`;
+            feedback1.style.display = 'block';
+        }
+        if (feedback2) {
+            feedback2.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.herb2}</div>`;
+            feedback2.style.display = 'block';
+        }
+        if (feedback3) {
+            feedback3.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.herb3}</div>`;
+            feedback3.style.display = 'block';
         }
     }
     
@@ -5844,10 +6069,34 @@
         }
     }
     
+    function showWorkplaceModelAnswers() {
+        const modelAnswers = {
+            workplace1: "Species name, location, habitat, description, identification method, conservation status, observer details, date",
+            workplace2: "River crossings (assess, use stick, unzip pack), Remote travel (PLB, tell someone, stay together), Weather exposure (check forecast, appropriate clothing)",
+            workplace3: "PLB/EPIRB, first aid kit, satellite phone, map/compass, spare food/water, emergency shelter, head torch"
+        };
+        
+        const feedback1 = document.getElementById('feedback-workplace-q1');
+        const feedback2 = document.getElementById('feedback-workplace-q2');
+        const feedback3 = document.getElementById('feedback-workplace-q3');
+        
+        if (feedback1) {
+            feedback1.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.workplace1}</div>`;
+            feedback1.style.display = 'block';
+        }
+        if (feedback2) {
+            feedback2.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.workplace2}</div>`;
+            feedback2.style.display = 'block';
+        }
+        if (feedback3) {
+            feedback3.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.workplace3}</div>`;
+            feedback3.style.display = 'block';
+        }
+    }
+    
     // Exam functions
     function checkExam(examNum) {
         const containers = document.querySelectorAll(`#section9 .quiz-container:nth-child(${examNum}) .question-container`);
-        let score = 0;
         
         containers.forEach(container => {
             const correctDiv = container.querySelector('.correct-answer');
@@ -5914,6 +6163,11 @@
         }
     }
     
+    // Print template function
+    function printTemplate() {
+        window.print();
+    }
+    
     // Species database table functions
     function renderSpeciesTable() {
         const tbody = document.getElementById('speciesTableBody');
@@ -5926,7 +6180,7 @@
         tbody.innerHTML = '';
         pageData.forEach(species => {
             const row = document.createElement('tr');
-            const statusClass = species.conservation.toLowerCase().replace(/[()]/g, '').replace(' ', '-').replace(' ', '-');
+            const statusClass = species.conservation.toLowerCase().replace(/[()]/g, '').replace(/ /g, '-');
             row.innerHTML = `
                 <td><em>${species.species}</em></td>
                 <td>${species.family}</td>
@@ -5945,7 +6199,7 @@
         const totalPages = Math.ceil(filteredSpecies.length / rowsPerPage);
         document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
         document.getElementById('prevPageBtn').disabled = currentPage === 1;
-        document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+        document.getElementById('nextPageBtn').disabled = currentPage === totalPages || totalPages === 0;
     }
     
     function filterSpeciesTable() {
@@ -6116,9 +6370,9 @@
             });
             
             // Search in glossary terms
-            document.querySelectorAll('.glossary-term').forEach(term => {
-                const termText = term.getAttribute('data-term');
-                const termTitle = term.querySelector('h4')?.textContent || '';
+            document.querySelectorAll('.glossary-term').forEach(termElement => {
+                const termText = termElement.getAttribute('data-term');
+                const termTitle = termElement.querySelector('h4')?.textContent || '';
                 if ((termText && termText.includes(term)) || termTitle.toLowerCase().includes(term)) {
                     results.push({
                         type: 'Glossary',
@@ -6157,6 +6411,10 @@
             terms.forEach(term => {
                 term.style.display = 'block';
             });
+            // Show all letter groups
+            document.querySelectorAll('.glossary-letter-group').forEach(group => {
+                group.style.display = 'block';
+            });
             return;
         }
         
@@ -6177,9 +6435,8 @@
         // Hide empty letter groups
         document.querySelectorAll('.glossary-letter-group').forEach(group => {
             const visibleTerms = group.querySelectorAll('.glossary-term[style="display: block;"]').length;
-            const allTerms = group.querySelectorAll('.glossary-term').length;
             
-            if (visibleTerms === 0 && allTerms > 0) {
+            if (visibleTerms === 0) {
                 group.style.display = 'none';
             } else {
                 group.style.display = 'block';
@@ -6224,6 +6481,10 @@
         const nextToSection10 = document.getElementById('nextToSection10');
         const prevToSection9 = document.getElementById('prevToSection9');
         const nextToDatabase = document.getElementById('nextToDatabase');
+        const prevFromDatabase = document.getElementById('prevFromDatabase');
+        const nextToAppendices = document.getElementById('nextToAppendices');
+        const prevFromAppendices = document.getElementById('prevFromAppendices');
+        const nextToGlossary = document.getElementById('nextToGlossary');
         
         if (nextToSection6) nextToSection6.addEventListener('click', () => switchTab('section6'));
         if (prevToSection5) prevToSection5.addEventListener('click', () => switchTab('section5'));
@@ -6236,6 +6497,10 @@
         if (nextToSection10) nextToSection10.addEventListener('click', () => switchTab('section10'));
         if (prevToSection9) prevToSection9.addEventListener('click', () => switchTab('section9'));
         if (nextToDatabase) nextToDatabase.addEventListener('click', () => switchTab('database'));
+        if (prevFromDatabase) prevFromDatabase.addEventListener('click', () => switchTab('section10'));
+        if (nextToAppendices) nextToAppendices.addEventListener('click', () => switchTab('appendices'));
+        if (prevFromAppendices) prevFromAppendices.addEventListener('click', () => switchTab('database'));
+        if (nextToGlossary) nextToGlossary.addEventListener('click', () => switchTab('glossary'));
         
         // Quiz buttons
         const checkQuiz1 = document.getElementById('checkQuiz1');
@@ -6302,7 +6567,7 @@
                 card.setAttribute('role', 'button');
                 card.setAttribute('tabindex', '0');
                 card.setAttribute('aria-label', `${s.species} - ${s.conservation} ${s.family}`);
-                const statusClass = s.conservation.toLowerCase().replace(/[()]/g, '').replace(' ', '-').replace(' ', '-');
+                const statusClass = s.conservation.toLowerCase().replace(/[()]/g, '').replace(/ /g, '-');
                 card.innerHTML = `
                     <h4><em>${s.species}</em></h4>
                     <div class="family">${s.family}</div>
@@ -6324,7 +6589,10 @@
         loadProgress();
         
         // Set initial aria-current
-        document.querySelector('.toc-list a[data-tab="welcome"]').setAttribute('aria-current', 'page');
+        const welcomeLink = document.querySelector('.toc-list a[data-tab="welcome"]');
+        if (welcomeLink) {
+            welcomeLink.setAttribute('aria-current', 'page');
+        }
     });
 </script>
 </body>
