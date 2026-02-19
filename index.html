@@ -2657,7 +2657,7 @@
                     <div class="key-point">
                         <div class="key-point-title"><i class="fas fa-clipboard-check"></i> Collection Ethics and Permits</div>
                         <ul>
-                            <li>Obtain necessary permits before collecting (DPIPWE, Parks Tasmania, landholder permission)</li>
+                            <li>Obtain necessary permits before collecting (NRE, Parks Tasmania, landholder permission)</li>
                             <li>Collect only what is needed - minimal impact principle</li>
                             <li>Never collect threatened species without specific permits</li>
                             <li>Document location, habitat, and associated species</li>
@@ -4221,7 +4221,7 @@
                     <h3>Useful Resources</h3>
                     <ul>
                         <li><strong>Tasmanian Herbarium:</strong> https://www.tmag.tas.gov.au/collections_and_research/tasmanian_herbarium</li>
-                        <li><strong>DPIPWE Threatened Species:</strong> https://dpipwe.tas.gov.au/conservation/threatened-species</li>
+                        <li><strong>NRE Threatened Species:</strong> https://nre.tas.gov.au/conservation/threatened-species</li>
                         <li><strong>Atlas of Living Australia:</strong> https://www.ala.org.au</li>
                         <li><strong>EPBC Act Listings:</strong> https://www.environment.gov.au/cgi-bin/sprat/public/sprat.pl</li>
                         <li><strong>Key to Tasmanian Vascular Plants (book):</strong> Jordan, R. (2019)</li>
@@ -5850,12 +5850,12 @@
             const answer = textarea3.value.toLowerCase();
             const hasScientific = answer.includes('scientific') || answer.includes('research');
             const hasPermit = answer.includes('permit');
-            const hasDPIPWE = answer.includes('dpipwe') || answer.includes('government');
+            const hasNRE = answer.includes('NRE') || answer.includes('government');
             const hasParks = answer.includes('parks') || answer.includes('tasmania');
             const hasLandholder = answer.includes('landholder') || answer.includes('private') || answer.includes('owner');
             
-            if ((hasPermit && hasDPIPWE) || (hasPermit && hasParks) || (hasPermit && hasLandholder)) {
-                feedback3.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Scientific collection permits from DPIPWE, Parks Tasmania, and landholder permission.</div>';
+            if ((hasPermit && hasNRE) || (hasPermit && hasParks) || (hasPermit && hasLandholder)) {
+                feedback3.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Scientific collection permits from NRE, Parks Tasmania, and landholder permission.</div>';
                 feedback3.className = 'answer-feedback correct';
                 score++;
                 
@@ -5865,7 +5865,7 @@
                     container.classList.remove('incorrect', 'partial');
                 }
             } else if (hasPermit) {
-                feedback3.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ You mentioned permits. Specifically: DPIPWE, Parks Tasmania, and landholder permission.</div>';
+                feedback3.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ You mentioned permits. Specifically: NRE, Parks Tasmania, and landholder permission.</div>';
                 feedback3.className = 'answer-feedback partial';
                 
                 const container = feedback3.closest('.question-container');
@@ -5874,7 +5874,7 @@
                     container.classList.remove('completed', 'incorrect');
                 }
             } else {
-                feedback3.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Scientific collection permits from DPIPWE, Parks Tasmania, and landholder permission.</div>';
+                feedback3.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Scientific collection permits from NRE, Parks Tasmania, and landholder permission.</div>';
                 feedback3.className = 'answer-feedback incorrect';
                 
                 const container = feedback3.closest('.question-container');
@@ -5906,7 +5906,7 @@
         const modelAnswers = {
             herb1: "Location, date, habitat, collector name, plant description, GPS coordinates, associated species",
             herb2: "To prevent mould and ensure even, rapid drying",
-            herb3: "Scientific collection permits from DPIPWE, Parks Tasmania, and landholder permission"
+            herb3: "Scientific collection permits from NRE, Parks Tasmania, and landholder permission"
         };
         
         const feedback1 = document.getElementById('feedback-herb-q1');
