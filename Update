@@ -1,233 +1,78 @@
-I'll help you add model answers to the practice exams. The issue is that the "Show Model Answers" buttons are calling a showExamAnswers() function, but that function isn't properly displaying the model answers. Here's the fix:
+Looking at your code, I can see the issue. The problem is with the ID naming in the navigation buttons. In your HTML, you have buttons with IDs like nextToAppendices and prevFromDatabase, but in the JavaScript event listeners, you're looking for different IDs.
 
-Add this updated JavaScript code right before the closing </script> tag:
+The specific issue when moving from Database to Appendices: you have a button with id="nextToAppendices" but the JavaScript is trying to attach an event listener to nextFromDatabase (which doesn't exist).
+
+Here's the fix - update the JavaScript section where the event listeners are set up. Find this part of your code (around line 4900-5000) and replace the database/appendices navigation section:
 
 ```javascript
-// Enhanced exam functions with model answers
-function showExamAnswers(examNum) {
-    const examContainers = document.querySelectorAll(`#section9 .quiz-container`);
-    
-    // Find the correct exam container (they're indexed by order)
-    let examIndex = examNum - 1;
-    if (examIndex >= 0 && examIndex < examContainers.length) {
-        const examContainer = examContainers[examIndex];
-        const questionContainers = examContainer.querySelectorAll('.question-container');
-        
-        questionContainers.forEach((container, index) => {
-            // Get the correct answer div
-            const correctDiv = container.querySelector('.correct-answer');
-            if (correctDiv) {
-                // Create or update feedback div
-                let feedbackDiv = container.querySelector('.answer-feedback.model-answer');
-                if (!feedbackDiv) {
-                    feedbackDiv = document.createElement('div');
-                    feedbackDiv.className = 'answer-feedback correct model-answer';
-                    container.appendChild(feedbackDiv);
-                }
-                
-                // Get the correct answer text
-                const correctText = correctDiv.textContent.replace('Correct answer:', '').trim();
-                feedbackDiv.innerHTML = `<i class="fas fa-check-circle"></i> <strong>Model Answer:</strong> ${correctText}`;
-                feedbackDiv.style.display = 'flex';
-                
-                // Also show the correct answer div as backup
-                correctDiv.style.display = 'block';
-            }
-        });
-        
-        // Show results message
-        const resultsDiv = document.getElementById(`exam${examNum}-results`);
-        if (resultsDiv) {
-            resultsDiv.style.display = 'block';
-            resultsDiv.innerHTML = `
-                <div class="quiz-score">Exam ${examNum} Model Answers</div>
-                <p><i class="fas fa-info-circle"></i> Model answers are displayed below each question. Review them carefully to understand the correct responses.</p>
-            `;
-        }
-    }
-}
+// Replace this section in your JavaScript (around line 4900-5000):
 
-// Enhanced check exam function
-function checkExam(examNum) {
-    const examContainers = document.querySelectorAll(`#section9 .quiz-container`);
-    let examIndex = examNum - 1;
-    
-    if (examIndex >= 0 && examIndex < examContainers.length) {
-        const examContainer = examContainers[examIndex];
-        const questionContainers = examContainer.querySelectorAll('.question-container');
-        let score = 0;
-        let totalQuestions = questionContainers.length;
-        
-        questionContainers.forEach((container, index) => {
-            const selectElement = container.querySelector('select');
-            const correctDiv = container.querySelector('.correct-answer');
-            
-            if (selectElement && correctDiv) {
-                const userAnswer = selectElement.value;
-                const correctText = correctDiv.textContent;
-                
-                // Extract correct option letter (a, b, c, d)
-                const correctMatch = correctText.match(/[a-d]\)/);
-                const correctLetter = correctMatch ? correctMatch[0].charAt(0) : null;
-                
-                // Create feedback div if it doesn't exist
-                let feedbackDiv = container.querySelector('.answer-feedback');
-                if (!feedbackDiv) {
-                    feedbackDiv = document.createElement('div');
-                    feedbackDiv.className = 'answer-feedback';
-                    container.appendChild(feedbackDiv);
-                }
-                
-                if (userAnswer && userAnswer === correctLetter) {
-                    feedbackDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✓ Correct!';
-                    feedbackDiv.className = 'answer-feedback correct';
-                    container.classList.add('completed');
-                    container.classList.remove('incorrect');
-                    score++;
-                } else if (userAnswer) {
-                    feedbackDiv.innerHTML = `<i class="fas fa-times-circle"></i> ✗ Incorrect. ${correctText}`;
-                    feedbackDiv.className = 'answer-feedback incorrect';
-                    container.classList.add('incorrect');
-                    container.classList.remove('completed');
-                } else {
-                    feedbackDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please select an answer.';
-                    feedbackDiv.className = 'answer-feedback partial';
-                }
-                feedbackDiv.style.display = 'flex';
-            }
-            
-            // Handle textarea questions (Exam 2 and 3)
-            const textareaElement = container.querySelector('textarea');
-            if (textareaElement && correctDiv) {
-                const userAnswer = textareaElement.value.trim();
-                const correctText = correctDiv.textContent.replace('Correct answer:', '').trim();
-                
-                let feedbackDiv = container.querySelector('.answer-feedback');
-                if (!feedbackDiv) {
-                    feedbackDiv = document.createElement('div');
-                    feedbackDiv.className = 'answer-feedback';
-                    container.appendChild(feedbackDiv);
-                }
-                
-                if (userAnswer.length > 0) {
-                    // Simple keyword matching for text answers
-                    const userLower = userAnswer.toLowerCase();
-                    const correctLower = correctText.toLowerCase();
-                    const keywords = correctLower.split(/\s+/).filter(word => word.length > 3);
-                    
-                    let matches = 0;
-                    keywords.forEach(keyword => {
-                        if (userLower.includes(keyword)) matches++;
-                    });
-                    
-                    if (matches >= Math.min(3, keywords.length * 0.5)) {
-                        feedbackDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✓ Good answer! Compare with model answer below.';
-                        feedbackDiv.className = 'answer-feedback correct';
-                        container.classList.add('completed');
-                        container.classList.remove('incorrect', 'partial');
-                        score += 0.5; // Partial credit for text answers
-                    } else {
-                        feedbackDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Review your answer. Model answer: ${correctText}`;
-                        feedbackDiv.className = 'answer-feedback partial';
-                        container.classList.add('partial');
-                        container.classList.remove('completed', 'incorrect');
-                    }
-                } else {
-                    feedbackDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please provide an answer.';
-                    feedbackDiv.className = 'answer-feedback partial';
-                }
-                feedbackDiv.style.display = 'flex';
-            }
-        });
-        
-        // Show results
-        const resultsDiv = document.getElementById(`exam${examNum}-results`);
-        if (resultsDiv) {
-            resultsDiv.style.display = 'block';
-            const percentage = Math.round((score / totalQuestions) * 100);
-            resultsDiv.innerHTML = `
-                <div class="quiz-score">You scored ${score.toFixed(1)} out of ${totalQuestions} (${percentage}%)</div>
-                <p>${percentage >= 80 ? 'Excellent work! You\'re well prepared.' : 
-                     percentage >= 60 ? 'Good effort! Review the questions you missed.' : 
-                     'Keep studying! Review the relevant sections and try again.'}</p>
-                <p><i class="fas fa-lightbulb"></i> Click "Show Model Answers" to see the correct responses.</p>
-            `;
-        }
-    }
-}
+// Tab navigation for new sections
+const nextToSection6 = document.getElementById('nextToSection6');
+const prevToSection5 = document.getElementById('prevToSection5');
+const nextToSection7 = document.getElementById('nextToSection7');
+const prevToSection6 = document.getElementById('prevToSection6');
+const nextToSection8 = document.getElementById('nextToSection8');
+const prevToSection7 = document.getElementById('prevToSection7');
+const nextToSection9 = document.getElementById('nextToSection9');
+const prevToSection8 = document.getElementById('prevToSection8');
+const nextToSection10 = document.getElementById('nextToSection10');
+const prevToSection9 = document.getElementById('prevToSection9');
+const nextToDatabase = document.getElementById('nextToDatabase');
+const prevFromDatabase = document.getElementById('prevFromDatabase');
+const nextToAppendices = document.getElementById('nextToAppendices');
+const prevFromAppendices = document.getElementById('prevFromAppendices');
+const nextToGlossary = document.getElementById('nextToGlossary');
 
-// Also add a helper function to clear answers if needed
-function clearExamAnswers(examNum) {
-    const examContainers = document.querySelectorAll(`#section9 .quiz-container`);
-    let examIndex = examNum - 1;
-    
-    if (examIndex >= 0 && examIndex < examContainers.length) {
-        const examContainer = examContainers[examIndex];
-        
-        // Clear selects
-        examContainer.querySelectorAll('select').forEach(select => {
-            select.value = '';
-        });
-        
-        // Clear textareas
-        examContainer.querySelectorAll('textarea').forEach(textarea => {
-            textarea.value = '';
-        });
-        
-        // Remove feedback
-        examContainer.querySelectorAll('.answer-feedback').forEach(feedback => {
-            feedback.style.display = 'none';
-        });
-        
-        // Remove question styling
-        examContainer.querySelectorAll('.question-container').forEach(container => {
-            container.classList.remove('completed', 'incorrect', 'partial');
-        });
-        
-        // Hide correct answers
-        examContainer.querySelectorAll('.correct-answer').forEach(correct => {
-            correct.style.display = 'none';
-        });
-        
-        // Hide results
-        const resultsDiv = document.getElementById(`exam${examNum}-results`);
-        if (resultsDiv) {
-            resultsDiv.style.display = 'none';
-        }
-    }
-}
+if (nextToSection6) nextToSection6.addEventListener('click', () => switchTab('section6'));
+if (prevToSection5) prevToSection5.addEventListener('click', () => switchTab('section5'));
+if (nextToSection7) nextToSection7.addEventListener('click', () => switchTab('section7'));
+if (prevToSection6) prevToSection6.addEventListener('click', () => switchTab('section6'));
+if (nextToSection8) nextToSection8.addEventListener('click', () => switchTab('section8'));
+if (prevToSection7) prevToSection7.addEventListener('click', () => switchTab('section7'));
+if (nextToSection9) nextToSection9.addEventListener('click', () => switchTab('section9'));
+if (prevToSection8) prevToSection8.addEventListener('click', () => switchTab('section8'));
+if (nextToSection10) nextToSection10.addEventListener('click', () => switchTab('section10'));
+if (prevToSection9) prevToSection9.addEventListener('click', () => switchTab('section9'));
+if (nextToDatabase) nextToDatabase.addEventListener('click', () => switchTab('database'));
+if (prevFromDatabase) prevFromDatabase.addEventListener('click', () => switchTab('section10'));
+if (nextToAppendices) nextToAppendices.addEventListener('click', () => switchTab('appendices'));
+if (prevFromAppendices) prevFromAppendices.addEventListener('click', () => switchTab('database'));
+if (nextToGlossary) nextToGlossary.addEventListener('click', () => switchTab('glossary'));
+```
 
-// Add keyboard navigation for model answers
-document.addEventListener('keydown', function(e) {
-    // Alt + M to show model answers for current exam
-    if (e.altKey && e.key === 'm') {
-        const activeTab = document.querySelector('.tab-container.active');
-        if (activeTab && activeTab.id === 'section9') {
-            // Find which exam is currently visible (simplified - shows all)
-            showExamAnswers(1);
-            showExamAnswers(2);
-            showExamAnswers(3);
+The key fix is ensuring the variable names match the HTML IDs:
+
+· In HTML: id="nextToAppendices" → In JS: const nextToAppendices (correct)
+· In HTML: id="prevFromAppendices" → In JS: const prevFromAppendices (correct)
+· In HTML: id="prevFromDatabase" → In JS: const prevFromDatabase (correct)
+
+The code you have actually looks correct in the provided snippet. The issue might be that this navigation code isn't being executed properly. Make sure this code is inside the DOMContentLoaded event listener and that there are no JavaScript errors preventing it from running.
+
+You could also add a more robust navigation system by using a common class for navigation buttons. Add this code after your existing event listeners:
+
+```javascript
+// Alternative approach using data attributes
+document.querySelectorAll('[data-nav]').forEach(button => {
+    button.addEventListener('click', function() {
+        const targetTab = this.getAttribute('data-nav');
+        if (targetTab) {
+            switchTab(targetTab);
         }
-    }
+    });
 });
 ```
 
-Also, you might want to add a "Clear Answers" button for each exam to reset them. Add this inside each exam's .quiz-actions div, before the closing </div>:
+Then in your HTML, add data-nav attributes to your navigation buttons:
 
 ```html
-<button class="quiz-action-button" onclick="clearExamAnswers(1)" style="background-color: #9e9e9e;" aria-label="Clear Exam 1 answers">
-    <i class="fas fa-eraser" aria-hidden="true"></i> Clear Answers
-</button>
+<!-- In the database section -->
+<button class="nav-button" id="prevFromDatabase" data-nav="section10"><i class="fas fa-arrow-left"></i> Previous: Section 10</button>
+<button class="nav-button" id="nextToAppendices" data-nav="appendices">Next: Appendices <i class="fas fa-arrow-right"></i></button>
+
+<!-- In the appendices section -->
+<button class="nav-button" id="prevFromAppendices" data-nav="database"><i class="fas fa-arrow-left"></i> Previous: Database</button>
+<button class="nav-button" id="nextToGlossary" data-nav="glossary">Next: Glossary <i class="fas fa-arrow-right"></i></button>
 ```
 
-Replace the number 1 with 2 or 3 for the other exams.
-
-The key issues I fixed:
-
-1. The showExamAnswers() function now properly finds each exam container and displays the model answers in a formatted way.
-2. Enhanced checkExam() function now provides better feedback, partial credit for text answers, and clear visual indicators of correctness.
-3. Added a clearExamAnswers() function to reset exams when needed.
-4. Keyboard shortcut (Alt+M) to show model answers for accessibility.
-5. Better visual feedback with color-coded correct/incorrect/partial states.
-
-Now when users click "Show Model Answers" on any practice exam, they'll see the correct answers displayed clearly below each question.
+This data-attribute approach is more reliable and will work regardless of variable naming issues.
