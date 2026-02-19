@@ -6811,6 +6811,69 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// Store the original footer content
+const footerElement = document.querySelector('footer');
+const originalFooterHTML = footerElement ? footerElement.innerHTML : '';
+
+// Override the switchTab function to protect the footer
+const originalSwitchTab = switchTab;
+switchTab = function(tabId) {
+    // Call the original function
+    originalSwitchTab(tabId);
+    
+    // Restore footer content after tab switch
+    setTimeout(() => {
+        if (footerElement) {
+            // Check if footer has been corrupted (contains database content)
+            if (footerElement.innerHTML.includes('species') || 
+                footerElement.innerHTML.includes('filter') ||
+                footerElement.innerHTML.includes('database')) {
+                // Restore original footer
+                footerElement.innerHTML = originalFooterHTML;
+            }
+        }
+    }, 10);
+};
+
+// Also add a mutation observer to watch for footer changes
+if (footerElement) {
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                // If footer content changed to something that looks like database content
+                if (footerElement.innerHTML.includes('species') && 
+                    !footerElement.innerHTML.includes('Student Learning Guide')) {
+                    footerElement.innerHTML = originalFooterHTML;
+                }
+            }
+        });
+    });
+    
+    observer.observe(footerElement, { 
+        childList: true, 
+        characterData: true, 
+        subtree: true 
+    });
+}
+
+// Add click handler protection for the specific buttons
+document.getElementById('nextToAppendices')?.addEventListener('click', function(e) {
+    // Schedule footer check after the tab switch
+    setTimeout(() => {
+        if (footerElement && footerElement.innerHTML.includes('species')) {
+            footerElement.innerHTML = originalFooterHTML;
+        }
+    }, 50);
+});
+
+document.getElementById('nextToGlossary')?.addEventListener('click', function(e) {
+    setTimeout(() => {
+        if (footerElement && footerElement.innerHTML.includes('species')) {
+            footerElement.innerHTML = originalFooterHTML;
+        }
+    }, 50);
+});
 </script>
 </body>
 </html>
