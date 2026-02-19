@@ -1586,7 +1586,7 @@
                                 <tr><td>Arrangement</td><td>Opposite</td><td>Leaves in pairs at nodes</td><td><em>Nothofagus cunninghamii</em></td></tr>
                                 <tr><td>Arrangement</td><td>Whorled</td><td>Three or more leaves at a node</td><td><em>Acacia verticillata</em></td></tr>
                                 <tr><td>Arrangement</td><td>Rosulate</td><td>Leaves in a basal rosette</td><td><em>Astelia alpina</em></td></tr>
-                                <tr><td>Shape</td><td>Lanceolate</td><td>Lance-shaped, broader at base</td><td><em>Eucalyptus globulus</em> (juvenile)</td></tr>
+                                <tr><td>Shape</td><td>Lanceolate</td><td>Lance-shaped, broader at base</td><td><em>Eucalyptus globulus</em> (adult)</td></tr>
                                 <tr><td>Shape</td><td>Ovate</td><td>Egg-shaped, broader at base</td><td><em>Nothofagus cunninghamii</em></td></tr>
                                 <tr><td>Shape</td><td>Linear</td><td>Long and narrow with parallel sides</td><td><em>Richea sprengelioides</em></td></tr>
                                 <tr><td>Shape</td><td>Cordate</td><td>Heart-shaped</td><td><em>Anodopetalum biglandulosum</em></td></tr>
@@ -1636,7 +1636,7 @@
                                     <h3>Lanceolate</h3>
                                 </div>
                                 <div class="flashcard-back">
-                                    <p>Lance-shaped, broader at the base and tapering to the tip. Example: Juvenile <em>Eucalyptus globulus</em> leaves.</p>
+                                    <p>Lance-shaped, broader at the base and tapering to the tip. Example: Adult <em>Eucalyptus globulus</em> leaves.</p>
                                 </div>
                             </div>
                             <div class="flashcard-nav">
@@ -2302,7 +2302,7 @@
                         <h4 style="margin-top: 1rem;">Practice Exercise: Create a Key for Tasmanian Myrtaceae</h4>
                         <p>Using the species below, construct a dichotomous key:</p>
                         <ul>
-                            <li><em>Eucalyptus globulus</em> - Smooth bark, large fruit, juvenile leaves opposite</li>
+                            <li><em>Eucalyptus globulus</em> - Smooth bark, large fruit, juvenile leaves opposite, adult leaves alternate</li>
                             <li><em>Eucalyptus obliqua</em> - Rough fibrous bark, falcate leaves</li>
                             <li><em>Leptospermum scoparium</em> - Small shrub, pungent leaves, woody capsule</li>
                             <li><em>Melaleuca squarrosa</em> - Papery bark, yellow flower spikes</li>
@@ -3792,7 +3792,7 @@
                                 <div class="glossary-term" data-term="lanceolate">
                                     <h4>Lanceolate</h4>
                                     <p>Lance-shaped leaf, broader at the base and tapering to the tip.</p>
-                                    <p class="example"><strong>Example:</strong> Juvenile leaves of <em>Eucalyptus globulus</em></p>
+                                    <p class="example"><strong>Example:</strong> Adult leaves of <em>Eucalyptus globulus</em></p>
                                 </div>
                                 <div class="glossary-term" data-term="legume">
                                     <h4>Legume</h4>
@@ -4300,7 +4300,7 @@
     // Complete species database (115+ entries with verified conservation statuses)
     const speciesDatabase = [
         // Myrtaceae
-        { species: "Eucalyptus globulus", family: "Myrtaceae", morphology: "Tree to 70m, juvenile leaves opposite, lanceolate, glaucous; adult leaves alternate, lanceolate, glossy green; bark smooth, shedding in long strips", habitat: "Dry sclerophyll forest, coastal areas, eastern Tasmania", conservation: "Not Listed" },
+        { species: "Eucalyptus globulus", family: "Myrtaceae", morphology: "Tree to 70m, oblong to eliptical leaves opposite, sessile, glaucous; adult leaves alternate, lanceolate, glossy green; bark smooth, shedding in long strips", habitat: "Dry sclerophyll forest, coastal areas, eastern Tasmania", conservation: "Not Listed" },
         { species: "Eucalyptus regnans", family: "Myrtaceae", morphology: "World's tallest flowering plant, to 100m, rough fibrous bark at base, smooth above, leaves lanceolate, falcate", habitat: "Wet sclerophyll forest, deep soils, southern Tasmania", conservation: "Not Listed" },
         { species: "Eucalyptus delegatensis", family: "Myrtaceae", morphology: "Alpine ash, to 90m, rough fibrous bark on trunk, smooth branches", habitat: "Subalpine woodlands, wet forest, Central Highlands", conservation: "Not Listed" },
         { species: "Eucalyptus amygdalina", family: "Myrtaceae", morphology: "Black peppermint, to 30m, fibrous bark, narrow lanceolate leaves", habitat: "Dry forest, sandy soils, eastern Tasmania", conservation: "Not Listed" },
@@ -5403,7 +5403,7 @@
             if (choice === 'smooth') {
                 step2.innerHTML = `
                     <h4>Step 2: Smooth Bark Eucalypts</h4>
-                    <div class="key-choice" onclick="eucalyptKeyChoice(2, 'globulus')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'globulus')">Large fruit (>1.5cm), juvenile leaves opposite - E. globulus</div>
+                    <div class="key-choice" onclick="eucalyptKeyChoice(2, 'globulus')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'globulus')">Large fruit (>1.5cm), juvenile leaves opposite, adult leaves alternate - E. globulus</div>
                     <div class="key-choice" onclick="eucalyptKeyChoice(2, 'viminalis')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'viminalis')">Narrow leaves, white bark - E. viminalis</div>
                     <div class="key-choice" onclick="eucalyptKeyChoice(2, 'coccifera')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'coccifera')">Alpine, glaucous leaves - E. coccifera</div>
                 `;
@@ -5422,7 +5422,7 @@
             if (choice === 'globulus') {
                 result.style.display = 'block';
                 resultText.innerHTML = '<strong>Eucalyptus globulus</strong> (Tasmanian Blue Gum)';
-                resultDesc.innerHTML = 'Tall tree with smooth bark, large fruit, juvenile leaves opposite.';
+                resultDesc.innerHTML = 'Tall tree with smooth bark, large fruit, juvenile leaves opposite, adult leaves alternate.';
                 if (noResult) noResult.style.display = 'none';
             } else if (choice === 'viminalis') {
                 result.style.display = 'block';
