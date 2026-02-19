@@ -1,83 +1,76 @@
-        // Create threatened species cards
-        const threatenedGrid = document.getElementById('threatenedGrid');
-        if (threatenedGrid) {
-            const threatenedSpecies = speciesDatabase.filter(s => 
-                s.conservation.includes('Endangered') || 
-                s.conservation.includes('Vulnerable') || 
-                s.conservation.includes('Rare') ||
-                s.conservation.includes('Critically')
-            ).slice(0, 30);
-            
-            threatenedGrid.innerHTML = '';
-            threatenedSpecies.forEach(s => {
-                const card = document.createElement('div');
-                card.className = 'specimen-card';
-                card.setAttribute('role', 'button');
-                card.setAttribute('tabindex', '0');
-                card.setAttribute('aria-label', `${s.species} - ${s.conservation} ${s.family}`);
-                const statusClass = s.conservation.toLowerCase().replace(/[()]/g, '').replace(/ /g, '-');
-                card.innerHTML = `
-                    <h4><em>${s.species}</em></h4>
-                    <div class="family">${s.family}</div>
-                    <p><strong>Habitat:</strong> ${s.habitat}</p>
-                    <p><span class="conservation ${statusClass}">${s.conservation}</span></p>
-                    <p><small>${s.morphology.substring(0, 60)}...</small></p>
-                `;
-                threatenedGrid.appendChild(card);
-            });
-        }
-
-// Add click handler for the card
-card.addEventListener('click', function() {
-    // Toggle expanded view
-    const existingDetail = card.querySelector('.card-detail');
-    if (existingDetail) {
-        existingDetail.remove();
-    } else {
-        const detailDiv = document.createElement('div');
-        detailDiv.className = 'card-detail';
-        detailDiv.style.marginTop = '10px';
-        detailDiv.style.padding = '10px';
-        detailDiv.style.backgroundColor = '#f9f9f9';
-        detailDiv.style.borderRadius = '4px';
-        detailDiv.innerHTML = `
-            <p><strong>Full Description:</strong> ${s.morphology}</p>
-            <p><strong>Habitat Details:</strong> ${s.habitat}</p>
+// Create threatened species cards
+const threatenedGrid = document.getElementById('threatenedGrid');
+if (threatenedGrid) {
+    const threatenedSpecies = speciesDatabase.filter(s => 
+        s.conservation.includes('Endangered') || 
+        s.conservation.includes('Vulnerable') || 
+        s.conservation.includes('Rare') ||
+        s.conservation.includes('Critically')
+    ).slice(0, 30);
+    
+    threatenedGrid.innerHTML = '';
+    threatenedSpecies.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'specimen-card';
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', `${s.species} - ${s.conservation} ${s.family}`);
+        const statusClass = s.conservation.toLowerCase().replace(/[()]/g, '').replace(/ /g, '-');
+        card.innerHTML = `
+            <h4><em>${s.species}</em></h4>
+            <div class="family">${s.family}</div>
+            <p><strong>Habitat:</strong> ${s.habitat}</p>
+            <p><span class="conservation ${statusClass}">${s.conservation}</span></p>
+            <p><small>${s.morphology.substring(0, 60)}...</small></p>
         `;
-        card.appendChild(detailDiv);
-    }
-});
+        
+        // Add click handler for the card (INSIDE the loop)
+        card.addEventListener('click', function() {
+            // Toggle expanded view
+            const existingDetail = card.querySelector('.card-detail');
+            if (existingDetail) {
+                existingDetail.remove();
+            } else {
+                const detailDiv = document.createElement('div');
+                detailDiv.className = 'card-detail';
+                detailDiv.style.marginTop = '10px';
+                detailDiv.style.padding = '10px';
+                detailDiv.style.backgroundColor = '#f9f9f9';
+                detailDiv.style.borderRadius = '4px';
+                detailDiv.style.borderLeft = '3px solid var(--primary-color)';
+                detailDiv.innerHTML = `
+                    <p><strong>Full Description:</strong> ${s.morphology}</p>
+                    <p><strong>Habitat Details:</strong> ${s.habitat}</p>
+                `;
+                card.appendChild(detailDiv);
+            }
+        });
 
-// Add keyboard support
-card.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        alert(`
-            ${s.species} (${s.family})
-            
-            Conservation Status: ${s.conservation}
-            
-            Habitat: ${s.habitat}
-            
-            Description: ${s.morphology}
-        `);
-    }
-});
+        // Add keyboard support (INSIDE the loop)
+        card.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                // Trigger the same click behavior
+                const existingDetail = card.querySelector('.card-detail');
+                if (existingDetail) {
+                    existingDetail.remove();
+                } else {
+                    const detailDiv = document.createElement('div');
+                    detailDiv.className = 'card-detail';
+                    detailDiv.style.marginTop = '10px';
+                    detailDiv.style.padding = '10px';
+                    detailDiv.style.backgroundColor = '#f9f9f9';
+                    detailDiv.style.borderRadius = '4px';
+                    detailDiv.style.borderLeft = '3px solid var(--primary-color)';
+                    detailDiv.innerHTML = `
+                        <p><strong>Full Description:</strong> ${s.morphology}</p>
+                        <p><strong>Habitat Details:</strong> ${s.habitat}</p>
+                    `;
+                    card.appendChild(detailDiv);
+                }
+            }
+        });
         
-        // Initialize search
-        setupSearch();
-        
-        // Initialize progress
-        updateProgress();
-        
-        // Check for saved progress
-        loadProgress();
-        
-        // Set initial aria-current
-        const welcomeLink = document.querySelector('.toc-list a[data-tab="welcome"]');
-        if (welcomeLink) {
-            welcomeLink.setAttribute('aria-current', 'page');
-        }
+        threatenedGrid.appendChild(card);
     });
-
-// Enhanced exam functions with model answers
+}
