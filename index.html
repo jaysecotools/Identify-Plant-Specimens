@@ -4686,21 +4686,20 @@
         }
     }
     
-    function showNextCard(section, currentCardNumber) {
-        const currentCard = document.getElementById(`${section}-card-${currentCardNumber}`);
-        const nextCard = document.getElementById(`${section}-card-${currentCardNumber + 1}`);
-        
-        if (currentCard) currentCard.style.display = 'none';
-        if (nextCard) nextCard.style.display = 'block';
+function showNextCard(section, currentCardNumber) {
+    const currentCard = document.getElementById(`${section}-card-${currentCardNumber}`);
+    
+    // Check if next card exists
+    let nextCard = document.getElementById(`${section}-card-${currentCardNumber + 1}`);
+    
+    // If next card doesn't exist, loop back to the first card
+    if (!nextCard) {
+        nextCard = document.getElementById(`${section}-card-1`);
     }
     
-    function showPrevCard(section, currentCardNumber) {
-        const currentCard = document.getElementById(`${section}-card-${currentCardNumber}`);
-        const prevCard = document.getElementById(`${section}-card-${currentCardNumber - 1}`);
-        
-        if (currentCard) currentCard.style.display = 'none';
-        if (prevCard) prevCard.style.display = 'block';
-    }
+    if (currentCard) currentCard.style.display = 'none';
+    if (nextCard) nextCard.style.display = 'block';
+}
     
     // Family matching game
     function checkFamilyMatch(species, family) {
