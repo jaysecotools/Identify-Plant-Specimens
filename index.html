@@ -1,3 +1,5 @@
+<!-- Updated Script section to ensure check answers works with Practice Exams in Section 9. -->
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -1483,15 +1485,13 @@
                         <div class="quiz-container" role="region" aria-label="Species-family matching game">
                             <p>Click on the family that matches each species:</p>
                             
-                            <div class="question-container" id="q1-1">
-                                <div class="question-number">Species 1: <em>Eucalyptus globulus</em></div>
-                                <div class="quiz-actions" style="justify-content: flex-start;">
-                                    <button class="quiz-action-button" onclick="checkFamilyMatch('Eucalyptus globulus', 'Myrtaceae')" aria-label="Select Myrtaceae for Eucalyptus globulus">Myrtaceae</button>
-                                    <button class="quiz-action-button" onclick="checkFamilyMatch('Eucalyptus globulus', 'Proteaceae')" aria-label="Select Proteaceae for Eucalyptus globulus">Proteaceae</button>
-                                    <button class="quiz-action-button" onclick="checkFamilyMatch('Eucalyptus globulus', 'Nothofagaceae')" aria-label="Select Nothofagaceae for Eucalyptus globulus">Nothofagaceae</button>
-                                </div>
-                                <div id="match-feedback-1" class="answer-feedback" role="alert" aria-live="polite"></div>
-                            </div>
+<div class="quiz-actions">
+    <button class="quiz-action-button" onclick="checkExam(1)" aria-label="Check Exam 1 answers">Check Exam 1</button>
+    <button class="quiz-action-button" onclick="showExamAnswers(1)" aria-label="Show Exam 1 answers">Show Answers</button>
+    <button class="quiz-action-button" onclick="clearExamAnswers(1)" style="background-color: #9e9e9e;" aria-label="Clear Exam 1 answers">
+        <i class="fas fa-eraser" aria-hidden="true"></i> Clear Answers
+    </button>
+</div>
                             
                             <div class="question-container" id="q1-2">
                                 <div class="question-number">Species 2: <em>Nothofagus cunninghamii</em></div>
@@ -4318,7 +4318,7 @@
         lastSaved: null
     };
     
-    // Complete species database (115+ entries with verified conservation statuses)
+
     const speciesDatabase = [
         // Myrtaceae
         { species: "Eucalyptus globulus", family: "Myrtaceae", morphology: "Tree to 70m, oblong to eliptical leaves opposite, sessile, glaucous; adult leaves alternate, lanceolate, glossy green; bark smooth, shedding in long strips", habitat: "Dry sclerophyll forest, coastal areas, eastern Tasmania", conservation: "Not Listed" },
@@ -4608,6 +4608,7 @@
         { species: "Empodisma minus", family: "Restionaceae", morphology: "Spreading rope-rush", habitat: "Moorland", conservation: "Not Listed" },
         { species: "Lepyrodia tasmanica", family: "Restionaceae", morphology: "Tasmanian scale-rush", habitat: "Wet heath", conservation: "Not Listed" }
     ];
+
     
     // Pagination variables
     let currentPage = 1;
@@ -4641,19 +4642,6 @@
         
         // Scroll to top
         window.scrollTo(0, 0);
-        
-        // Restore footer content after tab switch (fix for footer corruption)
-        const footerElement = document.querySelector('footer');
-        if (footerElement) {
-            const originalFooterHTML = '        <p>Student Learning Guide: AHCPCM303 Identify Plant Specimens | Contextualised for Tasmania, Australia</p>\n        <p>Developed by Jay Rowley © 2026 | 115+ Tasmanian native species | 35+ threatened species profiles | Enhanced with ARIA accessibility</p>\n        <p class="disclaimer">Fact-checked and verified against Tasmanian Herbarium records, EPBC Act listings (2025), and TSP Act 1995 schedules.</p>';
-            
-            // Check if footer has been corrupted (contains database content)
-            if (footerElement.innerHTML.includes('species') && 
-                !footerElement.innerHTML.includes('Student Learning Guide')) {
-                // Restore original footer
-                footerElement.innerHTML = originalFooterHTML;
-            }
-        }
     }
     
     // Progress tracking
@@ -4686,20 +4674,42 @@
         }
     }
     
-function showNextCard(section, currentCardNumber) {
-    const currentCard = document.getElementById(`${section}-card-${currentCardNumber}`);
-    
-    // Check if next card exists
-    let nextCard = document.getElementById(`${section}-card-${currentCardNumber + 1}`);
-    
-    // If next card doesn't exist, loop back to the first card
-    if (!nextCard) {
-        nextCard = document.getElementById(`${section}-card-1`);
+    function showNextCard(section, currentCardNumber) {
+        const currentCard = document.getElementById(`${section}-card-${currentCardNumber}`);
+        
+        // Check if next card exists
+        let nextCard = document.getElementById(`${section}-card-${currentCardNumber + 1}`);
+        
+        // If next card doesn't exist, loop back to the first card
+        if (!nextCard) {
+            nextCard = document.getElementById(`${section}-card-1`);
+        }
+        
+        if (currentCard) currentCard.style.display = 'none';
+        if (nextCard) nextCard.style.display = 'block';
     }
     
-    if (currentCard) currentCard.style.display = 'none';
-    if (nextCard) nextCard.style.display = 'block';
-}
+    function showPrevCard(section, currentCardNumber) {
+        const currentCard = document.getElementById(`${section}-card-${currentCardNumber}`);
+        
+        // Check if previous card exists
+        let prevCard = document.getElementById(`${section}-card-${currentCardNumber - 1}`);
+        
+        // If previous card doesn't exist, go to the last card
+        if (!prevCard) {
+            // Find the last card by checking sequentially
+            let cardNum = 1;
+            let lastCard = null;
+            while (document.getElementById(`${section}-card-${cardNum}`)) {
+                lastCard = document.getElementById(`${section}-card-${cardNum}`);
+                cardNum++;
+            }
+            prevCard = lastCard;
+        }
+        
+        if (currentCard) currentCard.style.display = 'none';
+        if (prevCard) prevCard.style.display = 'block';
+    }
     
     // Family matching game
     function checkFamilyMatch(species, family) {
@@ -4856,9 +4866,9 @@ function showNextCard(section, currentCardNumber) {
     
     // Leaf morphology quiz
     function checkLeafQuiz() {
-        const select1 = document.querySelector('[data-question="leaf1"]');
-        const select2 = document.querySelector('[data-question="leaf2"]');
-        const input3 = document.querySelector('[data-question="leaf3"]');
+        const select1 = document.getElementById('leaf-q1-select');
+        const select2 = document.getElementById('leaf-q2-select');
+        const input3 = document.getElementById('leaf-q3-input');
         
         const feedback1 = document.getElementById('feedback-leaf-q1');
         const feedback2 = document.getElementById('feedback-leaf-q2');
@@ -4925,7 +4935,7 @@ function showNextCard(section, currentCardNumber) {
             const container = feedback3.closest('.question-container');
             if (container) {
                 container.classList.add('completed');
-                container.classList.remove('incorrect');
+                container.classList.remove('incorrect', 'partial');
             }
         } else if (input3) {
             const userAnswer = input3.value.toLowerCase();
@@ -4971,9 +4981,9 @@ function showNextCard(section, currentCardNumber) {
     
     // Flower morphology quiz
     function checkFlowerQuiz() {
-        const input1 = document.querySelector('[data-question="flower1"]');
-        const input2 = document.querySelector('[data-question="flower2"]');
-        const textarea3 = document.querySelector('[data-question="flower3"]');
+        const input1 = document.getElementById('flower-q1-textarea');
+        const input2 = document.getElementById('flower-q2-input');
+        const textarea3 = document.getElementById('flower-q3-textarea');
         
         const feedback1 = document.getElementById('feedback-flower-q1');
         const feedback2 = document.getElementById('feedback-flower-q2');
@@ -5109,8 +5119,8 @@ function showNextCard(section, currentCardNumber) {
     
     // Reproductive structures quiz
     function checkReproQuiz() {
-        const input1 = document.querySelector('[data-question="repro1"]');
-        const input2 = document.querySelector('[data-question="repro2"]');
+        const input1 = document.getElementById('repro-q1-input');
+        const input2 = document.getElementById('repro-q2-input');
         
         const feedback1 = document.getElementById('feedback-repro-q1');
         const feedback2 = document.getElementById('feedback-repro-q2');
@@ -6137,35 +6147,208 @@ function showNextCard(section, currentCardNumber) {
         }
     }
     
-    // Exam functions
-    function checkExam(examNum) {
-        const containers = document.querySelectorAll(`#section9 .quiz-container:nth-child(${examNum}) .question-container`);
+    // EXAM FUNCTIONS - These need to be in the global scope
+    function showExamAnswers(examNum) {
+        console.log("showExamAnswers called for exam", examNum);
         
-        containers.forEach(container => {
-            const correctDiv = container.querySelector('.correct-answer');
-            if (correctDiv) {
-                correctDiv.style.display = 'block';
+        // Get all quiz containers in section 9
+        const examContainers = document.querySelectorAll('#section9 .quiz-container');
+        console.log("Found", examContainers.length, "exam containers");
+        
+        // Find the correct exam container (they're indexed by order)
+        let examIndex = examNum - 1;
+        if (examIndex >= 0 && examIndex < examContainers.length) {
+            const examContainer = examContainers[examIndex];
+            const questionContainers = examContainer.querySelectorAll('.question-container');
+            
+            console.log("Found", questionContainers.length, "questions in exam", examNum);
+            
+            questionContainers.forEach((container, index) => {
+                // Get the correct answer div
+                const correctDiv = container.querySelector('.correct-answer');
+                if (correctDiv) {
+                    // Show the correct answer div
+                    correctDiv.style.display = 'block';
+                    
+                    // Create or update feedback div
+                    let feedbackDiv = container.querySelector('.answer-feedback.model-answer');
+                    if (!feedbackDiv) {
+                        feedbackDiv = document.createElement('div');
+                        feedbackDiv.className = 'answer-feedback correct model-answer';
+                        container.appendChild(feedbackDiv);
+                    }
+                    
+                    // Get the correct answer text
+                    const correctText = correctDiv.textContent.replace('Correct answer:', '').trim();
+                    feedbackDiv.innerHTML = `<i class="fas fa-check-circle"></i> <strong>Model Answer:</strong> ${correctText}`;
+                    feedbackDiv.style.display = 'flex';
+                }
+            });
+            
+            // Show results message
+            const resultsDiv = document.getElementById(`exam${examNum}-results`);
+            if (resultsDiv) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.innerHTML = `
+                    <div class="quiz-score">Exam ${examNum} Model Answers</div>
+                    <p><i class="fas fa-info-circle"></i> Model answers are displayed below each question. Review them carefully to understand the correct responses.</p>
+                `;
             }
-        });
-        
-        const resultsDiv = document.getElementById(`exam${examNum}-results`);
-        if (resultsDiv) {
-            resultsDiv.style.display = 'block';
-            resultsDiv.innerHTML = `
-                <div class="quiz-score">Exam ${examNum} Checked</div>
-                <p>Compare your answers with the model answers shown above. For best results, review any incorrect answers in the relevant sections.</p>
-            `;
+        } else {
+            console.log("Exam index out of range");
         }
     }
     
-    function showExamAnswers(examNum) {
-        const containers = document.querySelectorAll(`#section9 .quiz-container:nth-child(${examNum}) .question-container`);
-        containers.forEach(container => {
-            const correctDiv = container.querySelector('.correct-answer');
-            if (correctDiv) {
-                correctDiv.style.display = 'block';
+    function checkExam(examNum) {
+        console.log("checkExam called for exam", examNum);
+        
+        const examContainers = document.querySelectorAll('#section9 .quiz-container');
+        let examIndex = examNum - 1;
+        
+        if (examIndex >= 0 && examIndex < examContainers.length) {
+            const examContainer = examContainers[examIndex];
+            const questionContainers = examContainer.querySelectorAll('.question-container');
+            let score = 0;
+            let totalQuestions = questionContainers.length;
+            
+            questionContainers.forEach((container, index) => {
+                const selectElement = container.querySelector('select');
+                const correctDiv = container.querySelector('.correct-answer');
+                
+                if (selectElement && correctDiv) {
+                    const userAnswer = selectElement.value;
+                    const correctText = correctDiv.textContent;
+                    
+                    // Extract correct option letter (a, b, c, d)
+                    const correctMatch = correctText.match(/[a-d]\)/);
+                    const correctLetter = correctMatch ? correctMatch[0].charAt(0) : null;
+                    
+                    // Create feedback div if it doesn't exist
+                    let feedbackDiv = container.querySelector('.answer-feedback:not(.model-answer)');
+                    if (!feedbackDiv) {
+                        feedbackDiv = document.createElement('div');
+                        feedbackDiv.className = 'answer-feedback';
+                        container.appendChild(feedbackDiv);
+                    }
+                    
+                    if (userAnswer && userAnswer === correctLetter) {
+                        feedbackDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✓ Correct!';
+                        feedbackDiv.className = 'answer-feedback correct';
+                        container.classList.add('completed');
+                        container.classList.remove('incorrect');
+                        score++;
+                    } else if (userAnswer) {
+                        feedbackDiv.innerHTML = `<i class="fas fa-times-circle"></i> ✗ Incorrect. ${correctText}`;
+                        feedbackDiv.className = 'answer-feedback incorrect';
+                        container.classList.add('incorrect');
+                        container.classList.remove('completed');
+                    } else {
+                        feedbackDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please select an answer.';
+                        feedbackDiv.className = 'answer-feedback partial';
+                    }
+                    feedbackDiv.style.display = 'flex';
+                }
+                
+                // Handle textarea questions (Exam 2 and 3)
+                const textareaElement = container.querySelector('textarea');
+                if (textareaElement && correctDiv) {
+                    const userAnswer = textareaElement.value.trim();
+                    const correctText = correctDiv.textContent.replace('Correct answer:', '').trim();
+                    
+                    let feedbackDiv = container.querySelector('.answer-feedback:not(.model-answer)');
+                    if (!feedbackDiv) {
+                        feedbackDiv = document.createElement('div');
+                        feedbackDiv.className = 'answer-feedback';
+                        container.appendChild(feedbackDiv);
+                    }
+                    
+                    if (userAnswer.length > 0) {
+                        // Simple keyword matching for text answers
+                        const userLower = userAnswer.toLowerCase();
+                        const correctLower = correctText.toLowerCase();
+                        const keywords = correctLower.split(/\s+/).filter(word => word.length > 3);
+                        
+                        let matches = 0;
+                        keywords.forEach(keyword => {
+                            if (userLower.includes(keyword)) matches++;
+                        });
+                        
+                        if (matches >= Math.min(3, keywords.length * 0.5)) {
+                            feedbackDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✓ Good answer! Compare with model answer below.';
+                            feedbackDiv.className = 'answer-feedback correct';
+                            container.classList.add('completed');
+                            container.classList.remove('incorrect', 'partial');
+                            score += 0.5; // Partial credit for text answers
+                        } else {
+                            feedbackDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Review your answer. Model answer: ${correctText}`;
+                            feedbackDiv.className = 'answer-feedback partial';
+                            container.classList.add('partial');
+                            container.classList.remove('completed', 'incorrect');
+                        }
+                    } else {
+                        feedbackDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please provide an answer.';
+                        feedbackDiv.className = 'answer-feedback partial';
+                    }
+                    feedbackDiv.style.display = 'flex';
+                }
+            });
+            
+            // Show results
+            const resultsDiv = document.getElementById(`exam${examNum}-results`);
+            if (resultsDiv) {
+                resultsDiv.style.display = 'block';
+                const percentage = Math.round((score / totalQuestions) * 100);
+                resultsDiv.innerHTML = `
+                    <div class="quiz-score">You scored ${score.toFixed(1)} out of ${totalQuestions} (${percentage}%)</div>
+                    <p>${percentage >= 80 ? 'Excellent work! You\'re well prepared.' : 
+                         percentage >= 60 ? 'Good effort! Review the questions you missed.' : 
+                         'Keep studying! Review the relevant sections and try again.'}</p>
+                    <p><i class="fas fa-lightbulb"></i> Click "Show Model Answers" to see the correct responses.</p>
+                `;
             }
-        });
+        }
+    }
+    
+    function clearExamAnswers(examNum) {
+        console.log("clearExamAnswers called for exam", examNum);
+        
+        const examContainers = document.querySelectorAll('#section9 .quiz-container');
+        let examIndex = examNum - 1;
+        
+        if (examIndex >= 0 && examIndex < examContainers.length) {
+            const examContainer = examContainers[examIndex];
+            
+            // Clear selects
+            examContainer.querySelectorAll('select').forEach(select => {
+                select.value = '';
+            });
+            
+            // Clear textareas
+            examContainer.querySelectorAll('textarea').forEach(textarea => {
+                textarea.value = '';
+            });
+            
+            // Remove feedback
+            examContainer.querySelectorAll('.answer-feedback').forEach(feedback => {
+                feedback.style.display = 'none';
+            });
+            
+            // Remove question styling
+            examContainer.querySelectorAll('.question-container').forEach(container => {
+                container.classList.remove('completed', 'incorrect', 'partial');
+            });
+            
+            // Hide correct answers
+            examContainer.querySelectorAll('.correct-answer').forEach(correct => {
+                correct.style.display = 'none';
+            });
+            
+            // Hide results
+            const resultsDiv = document.getElementById(`exam${examNum}-results`);
+            if (resultsDiv) {
+                resultsDiv.style.display = 'none';
+            }
+        }
     }
     
     // Herbarium functions
@@ -6489,6 +6672,8 @@ function showNextCard(section, currentCardNumber) {
     
     // Initialize everything when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM loaded, initializing...");
+        
         // Tab navigation for existing sections
         const nextToSection1 = document.getElementById('nextToSection1');
         const prevToWelcome = document.getElementById('prevToWelcome');
@@ -6685,214 +6870,6 @@ function showNextCard(section, currentCardNumber) {
                 threatenedGrid.appendChild(card);
             });
         }
-        
-        // Enhanced exam functions with model answers
-        function showExamAnswers(examNum) {
-            const examContainers = document.querySelectorAll(`#section9 .quiz-container`);
-            
-            // Find the correct exam container (they're indexed by order)
-            let examIndex = examNum - 1;
-            if (examIndex >= 0 && examIndex < examContainers.length) {
-                const examContainer = examContainers[examIndex];
-                const questionContainers = examContainer.querySelectorAll('.question-container');
-                
-                questionContainers.forEach((container, index) => {
-                    // Get the correct answer div
-                    const correctDiv = container.querySelector('.correct-answer');
-                    if (correctDiv) {
-                        // Create or update feedback div
-                        let feedbackDiv = container.querySelector('.answer-feedback.model-answer');
-                        if (!feedbackDiv) {
-                            feedbackDiv = document.createElement('div');
-                            feedbackDiv.className = 'answer-feedback correct model-answer';
-                            container.appendChild(feedbackDiv);
-                        }
-                        
-                        // Get the correct answer text
-                        const correctText = correctDiv.textContent.replace('Correct answer:', '').trim();
-                        feedbackDiv.innerHTML = `<i class="fas fa-check-circle"></i> <strong>Model Answer:</strong> ${correctText}`;
-                        feedbackDiv.style.display = 'flex';
-                        
-                        // Also show the correct answer div as backup
-                        correctDiv.style.display = 'block';
-                    }
-                });
-                
-                // Show results message
-                const resultsDiv = document.getElementById(`exam${examNum}-results`);
-                if (resultsDiv) {
-                    resultsDiv.style.display = 'block';
-                    resultsDiv.innerHTML = `
-                        <div class="quiz-score">Exam ${examNum} Model Answers</div>
-                        <p><i class="fas fa-info-circle"></i> Model answers are displayed below each question. Review them carefully to understand the correct responses.</p>
-                    `;
-                }
-            }
-        }
-        
-        // Enhanced check exam function
-        function checkExam(examNum) {
-            const examContainers = document.querySelectorAll(`#section9 .quiz-container`);
-            let examIndex = examNum - 1;
-            
-            if (examIndex >= 0 && examIndex < examContainers.length) {
-                const examContainer = examContainers[examIndex];
-                const questionContainers = examContainer.querySelectorAll('.question-container');
-                let score = 0;
-                let totalQuestions = questionContainers.length;
-                
-                questionContainers.forEach((container, index) => {
-                    const selectElement = container.querySelector('select');
-                    const correctDiv = container.querySelector('.correct-answer');
-                    
-                    if (selectElement && correctDiv) {
-                        const userAnswer = selectElement.value;
-                        const correctText = correctDiv.textContent;
-                        
-                        // Extract correct option letter (a, b, c, d)
-                        const correctMatch = correctText.match(/[a-d]\)/);
-                        const correctLetter = correctMatch ? correctMatch[0].charAt(0) : null;
-                        
-                        // Create feedback div if it doesn't exist
-                        let feedbackDiv = container.querySelector('.answer-feedback');
-                        if (!feedbackDiv) {
-                            feedbackDiv = document.createElement('div');
-                            feedbackDiv.className = 'answer-feedback';
-                            container.appendChild(feedbackDiv);
-                        }
-                        
-                        if (userAnswer && userAnswer === correctLetter) {
-                            feedbackDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✓ Correct!';
-                            feedbackDiv.className = 'answer-feedback correct';
-                            container.classList.add('completed');
-                            container.classList.remove('incorrect');
-                            score++;
-                        } else if (userAnswer) {
-                            feedbackDiv.innerHTML = `<i class="fas fa-times-circle"></i> ✗ Incorrect. ${correctText}`;
-                            feedbackDiv.className = 'answer-feedback incorrect';
-                            container.classList.add('incorrect');
-                            container.classList.remove('completed');
-                        } else {
-                            feedbackDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please select an answer.';
-                            feedbackDiv.className = 'answer-feedback partial';
-                        }
-                        feedbackDiv.style.display = 'flex';
-                    }
-                    
-                    // Handle textarea questions (Exam 2 and 3)
-                    const textareaElement = container.querySelector('textarea');
-                    if (textareaElement && correctDiv) {
-                        const userAnswer = textareaElement.value.trim();
-                        const correctText = correctDiv.textContent.replace('Correct answer:', '').trim();
-                        
-                        let feedbackDiv = container.querySelector('.answer-feedback');
-                        if (!feedbackDiv) {
-                            feedbackDiv = document.createElement('div');
-                            feedbackDiv.className = 'answer-feedback';
-                            container.appendChild(feedbackDiv);
-                        }
-                        
-                        if (userAnswer.length > 0) {
-                            // Simple keyword matching for text answers
-                            const userLower = userAnswer.toLowerCase();
-                            const correctLower = correctText.toLowerCase();
-                            const keywords = correctLower.split(/\s+/).filter(word => word.length > 3);
-                            
-                            let matches = 0;
-                            keywords.forEach(keyword => {
-                                if (userLower.includes(keyword)) matches++;
-                            });
-                            
-                            if (matches >= Math.min(3, keywords.length * 0.5)) {
-                                feedbackDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✓ Good answer! Compare with model answer below.';
-                                feedbackDiv.className = 'answer-feedback correct';
-                                container.classList.add('completed');
-                                container.classList.remove('incorrect', 'partial');
-                                score += 0.5; // Partial credit for text answers
-                            } else {
-                                feedbackDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Review your answer. Model answer: ${correctText}`;
-                                feedbackDiv.className = 'answer-feedback partial';
-                                container.classList.add('partial');
-                                container.classList.remove('completed', 'incorrect');
-                            }
-                        } else {
-                            feedbackDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please provide an answer.';
-                            feedbackDiv.className = 'answer-feedback partial';
-                        }
-                        feedbackDiv.style.display = 'flex';
-                    }
-                });
-                
-                // Show results
-                const resultsDiv = document.getElementById(`exam${examNum}-results`);
-                if (resultsDiv) {
-                    resultsDiv.style.display = 'block';
-                    const percentage = Math.round((score / totalQuestions) * 100);
-                    resultsDiv.innerHTML = `
-                        <div class="quiz-score">You scored ${score.toFixed(1)} out of ${totalQuestions} (${percentage}%)</div>
-                        <p>${percentage >= 80 ? 'Excellent work! You\'re well prepared.' : 
-                             percentage >= 60 ? 'Good effort! Review the questions you missed.' : 
-                             'Keep studying! Review the relevant sections and try again.'}</p>
-                        <p><i class="fas fa-lightbulb"></i> Click "Show Model Answers" to see the correct responses.</p>
-                    `;
-                }
-            }
-        }
-        
-        // Also add a helper function to clear answers if needed
-        function clearExamAnswers(examNum) {
-            const examContainers = document.querySelectorAll(`#section9 .quiz-container`);
-            let examIndex = examNum - 1;
-            
-            if (examIndex >= 0 && examIndex < examContainers.length) {
-                const examContainer = examContainers[examIndex];
-                
-                // Clear selects
-                examContainer.querySelectorAll('select').forEach(select => {
-                    select.value = '';
-                });
-                
-                // Clear textareas
-                examContainer.querySelectorAll('textarea').forEach(textarea => {
-                    textarea.value = '';
-                });
-                
-                // Remove feedback
-                examContainer.querySelectorAll('.answer-feedback').forEach(feedback => {
-                    feedback.style.display = 'none';
-                });
-                
-                // Remove question styling
-                examContainer.querySelectorAll('.question-container').forEach(container => {
-                    container.classList.remove('completed', 'incorrect', 'partial');
-                });
-                
-                // Hide correct answers
-                examContainer.querySelectorAll('.correct-answer').forEach(correct => {
-                    correct.style.display = 'none';
-                });
-                
-                // Hide results
-                const resultsDiv = document.getElementById(`exam${examNum}-results`);
-                if (resultsDiv) {
-                    resultsDiv.style.display = 'none';
-                }
-            }
-        }
-        
-        // Add keyboard navigation for model answers
-        document.addEventListener('keydown', function(e) {
-            // Alt + M to show model answers for current exam
-            if (e.altKey && e.key === 'm') {
-                const activeTab = document.querySelector('.tab-container.active');
-                if (activeTab && activeTab.id === 'section9') {
-                    // Find which exam is currently visible (simplified - shows all)
-                    showExamAnswers(1);
-                    showExamAnswers(2);
-                    showExamAnswers(3);
-                }
-            }
-        });
         
         // Setup search
         setupSearch();
