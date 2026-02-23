@@ -1,78 +1,2282 @@
-I can see the issue! The "show answers" functionality for the practice exams is defined but not properly connected to the HTML elements. Looking at your code, I can see the functions showExamAnswers() and checkExam() are defined, but they need to be properly linked to the buttons.
-
-The problem is in the Practice Exam sections - the buttons are calling functions that need to be properly implemented. Here's the fix:
-
-Replace the existing exam button sections (around line 3650-3700) with this corrected code:
-
-```html
-<div class="quiz-actions">
-    <button class="quiz-action-button" onclick="checkExam(1)" aria-label="Check Exam 1 answers">Check Exam 1</button>
-    <button class="quiz-action-button" onclick="showExamAnswers(1)" aria-label="Show Exam 1 answers">Show Answers</button>
-    <button class="quiz-action-button" onclick="clearExamAnswers(1)" style="background-color: #9e9e9e;" aria-label="Clear Exam 1 answers">
-        <i class="fas fa-eraser" aria-hidden="true"></i> Clear Answers
-    </button>
-</div>
-```
-
-And make sure this enhanced version of the showExamAnswers function is in your JavaScript (around line 4800):
-
-```javascript
-// Enhanced exam functions with model answers
-function showExamAnswers(examNum) {
-    const examContainers = document.querySelectorAll(`#section9 .quiz-container`);
+<script>
+    // Global variables for progress tracking
+    let currentTab = 'welcome';
+    const tabs = ['welcome', 'section1', 'section2', 'section3', 'section4', 'section5', 'section6', 'section7', 'section8', 'section9', 'section10', 'database', 'appendices', 'glossary'];
     
-    // Find the correct exam container (they're indexed by order)
-    let examIndex = examNum - 1;
-    if (examIndex >= 0 && examIndex < examContainers.length) {
-        const examContainer = examContainers[examIndex];
-        const questionContainers = examContainer.querySelectorAll('.question-container');
+    let userProgress = {
+        currentTab: 'welcome',
+        completedSections: ['welcome'],
+        quizResults: {},
+        lastSaved: null
+    };
+    
+    // Complete species database (115+ entries with verified conservation statuses)
+    const speciesDatabase = [
+        // ... (keep your existing speciesDatabase array exactly as is)
+    ];
+    
+    // Pagination variables
+    let currentPage = 1;
+    let rowsPerPage = 20;
+    let filteredSpecies = [...speciesDatabase];
+    
+    // Tab switching function
+    function switchTab(tabId) {
+        const previousTab = document.getElementById(currentTab);
+        const newTab = document.getElementById(tabId);
         
-        questionContainers.forEach((container, index) => {
-            // Get the correct answer div
-            const correctDiv = container.querySelector('.correct-answer');
-            if (correctDiv) {
-                // Show the correct answer div
-                correctDiv.style.display = 'block';
-                
-                // Create or update feedback div
-                let feedbackDiv = container.querySelector('.answer-feedback.model-answer');
-                if (!feedbackDiv) {
-                    feedbackDiv = document.createElement('div');
-                    feedbackDiv.className = 'answer-feedback correct model-answer';
-                    container.appendChild(feedbackDiv);
-                }
-                
-                // Get the correct answer text
-                const correctText = correctDiv.textContent.replace('Correct answer:', '').trim();
-                feedbackDiv.innerHTML = `<i class="fas fa-check-circle"></i> <strong>Model Answer:</strong> ${correctText}`;
-                feedbackDiv.style.display = 'flex';
+        if (previousTab) previousTab.classList.remove('active');
+        if (newTab) newTab.classList.add('active');
+        
+        currentTab = tabId;
+        updateProgress();
+        
+        // Update TOC aria-current
+        document.querySelectorAll('.toc-list a').forEach(link => {
+            if (link.getAttribute('data-tab') === tabId) {
+                link.setAttribute('aria-current', 'page');
+            } else {
+                link.removeAttribute('aria-current');
             }
         });
         
-        // Show results message
-        const resultsDiv = document.getElementById(`exam${examNum}-results`);
+        // Close mobile sidebar
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('mobileOverlay').classList.remove('active');
+        document.getElementById('toggleSidebar').setAttribute('aria-expanded', 'false');
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+    }
+    
+    // Progress tracking
+    function updateProgress() {
+        const progress = ((userProgress.completedSections.length) / tabs.length) * 100;
+        document.getElementById('progressBar').style.width = `${progress}%`;
+        document.getElementById('progressBar').setAttribute('aria-valuenow', progress);
+        
+        // Save to localStorage automatically
+        localStorage.setItem('ahcpcm303Progress', JSON.stringify(userProgress));
+    }
+    
+    // Mark section as complete
+    function markSectionComplete(sectionId) {
+        if (!userProgress.completedSections.includes(sectionId)) {
+            userProgress.completedSections.push(sectionId);
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.classList.add('section-complete');
+            }
+            updateProgress();
+        }
+    }
+    
+    // Flashcard functions
+    function flipCard(cardId) {
+        const card = document.getElementById(cardId).querySelector('.flashcard');
+        if (card) {
+            card.classList.toggle('flipped');
+        }
+    }
+    
+    function showNextCard(section, currentCardNumber) {
+        const currentCard = document.getElementById(`${section}-card-${currentCardNumber}`);
+        
+        // Check if next card exists
+        let nextCard = document.getElementById(`${section}-card-${currentCardNumber + 1}`);
+        
+        // If next card doesn't exist, loop back to the first card
+        if (!nextCard) {
+            nextCard = document.getElementById(`${section}-card-1`);
+        }
+        
+        if (currentCard) currentCard.style.display = 'none';
+        if (nextCard) nextCard.style.display = 'block';
+    }
+    
+    function showPrevCard(section, currentCardNumber) {
+        const currentCard = document.getElementById(`${section}-card-${currentCardNumber}`);
+        
+        // Check if previous card exists
+        let prevCard = document.getElementById(`${section}-card-${currentCardNumber - 1}`);
+        
+        // If previous card doesn't exist, go to the last card
+        if (!prevCard) {
+            // Find the last card by checking sequentially
+            let cardNum = 1;
+            let lastCard = null;
+            while (document.getElementById(`${section}-card-${cardNum}`)) {
+                lastCard = document.getElementById(`${section}-card-${cardNum}`);
+                cardNum++;
+            }
+            prevCard = lastCard;
+        }
+        
+        if (currentCard) currentCard.style.display = 'none';
+        if (prevCard) prevCard.style.display = 'block';
+    }
+    
+    // Family matching game
+    function checkFamilyMatch(species, family) {
+        const correctMatches = {
+            'Eucalyptus globulus': 'Myrtaceae',
+            'Nothofagus cunninghamii': 'Nothofagaceae',
+            'Telopea truncata': 'Proteaceae',
+            'Richea pandanifolia': 'Ericaceae',
+            'Lagarostrobos franklinii': 'Podocarpaceae'
+        };
+        
+        let feedbackId;
+        if (species === 'Eucalyptus globulus') feedbackId = 'match-feedback-1';
+        else if (species === 'Nothofagus cunninghamii') feedbackId = 'match-feedback-2';
+        else if (species === 'Telopea truncata') feedbackId = 'match-feedback-3';
+        else if (species === 'Richea pandanifolia') feedbackId = 'match-feedback-4';
+        else if (species === 'Lagarostrobos franklinii') feedbackId = 'match-feedback-5';
+        
+        const feedbackElement = document.getElementById(feedbackId);
+        
+        if (feedbackElement) {
+            if (correctMatches[species] === family) {
+                feedbackElement.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Well done.</div>';
+                feedbackElement.className = 'answer-feedback correct';
+                
+                // Mark the question container as completed
+                const container = feedbackElement.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect');
+                }
+            } else {
+                feedbackElement.innerHTML = `<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Try again. Hint: ${species} belongs to family ${correctMatches[species]}</div>`;
+                feedbackElement.className = 'answer-feedback incorrect';
+                
+                const container = feedbackElement.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed');
+                }
+            }
+            feedbackElement.style.display = 'flex';
+        }
+    }
+    
+    // Interactive key simulation
+    function keyChoice(step, choice) {
+        const step1 = document.getElementById('key-step-1');
+        const step2 = document.getElementById('key-step-2');
+        const step3 = document.getElementById('key-step-3');
+        const result = document.getElementById('key-result');
+        const resultText = document.getElementById('result-text');
+        const resultDesc = document.getElementById('result-description');
+        const noResult = document.getElementById('no-result-message');
+        
+        if (step === 1) {
+            step1.style.display = 'none';
+            step2.style.display = 'block';
+            
+            if (choice === 'simple') {
+                step2.innerHTML = `
+                    <h4>Step 2: Leaf Arrangement</h4>
+                    <div class="key-choice" onclick="keyChoice(2, 'alternate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(2, 'alternate')">Alternate leaves</div>
+                    <div class="key-choice" onclick="keyChoice(2, 'opposite')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(2, 'opposite')">Opposite leaves</div>
+                    <div class="key-choice" onclick="keyChoice(2, 'whorled')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(2, 'whorled')">Whorled leaves</div>
+                `;
+            } else if (choice === 'compound') {
+                step2.innerHTML = `
+                    <h4>Step 2: Leaf Type</h4>
+                    <div class="key-choice" onclick="keyChoice(2, 'pinnate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(2, 'pinnate')">Pinnately compound (fern-like)</div>
+                    <div class="key-choice" onclick="keyChoice(2, 'palmate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(2, 'palmate')">Palmately compound</div>
+                    <div class="key-choice" onclick="keyChoice(2, 'bipinnate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(2, 'bipinnate')">Twice divided (bipinnate)</div>
+                `;
+            }
+            if (noResult) noResult.style.display = 'none';
+        } else if (step === 2) {
+            step2.style.display = 'none';
+            
+            if (choice === 'alternate') {
+                step3.style.display = 'block';
+                step3.innerHTML = `
+                    <h4>Step 3: Leaf Shape</h4>
+                    <div class="key-choice" onclick="keyChoice(3, 'lanceolate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(3, 'lanceolate')">Lanceolate (lance-shaped)</div>
+                    <div class="key-choice" onclick="keyChoice(3, 'linear')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(3, 'linear')">Linear (long and narrow)</div>
+                    <div class="key-choice" onclick="keyChoice(3, 'ovate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(3, 'ovate')">Ovate (egg-shaped)</div>
+                `;
+            } else if (choice === 'opposite') {
+                step3.style.display = 'block';
+                step3.innerHTML = `
+                    <h4>Step 3: Leaf Margin</h4>
+                    <div class="key-choice" onclick="keyChoice(3, 'entire')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(3, 'entire')">Entire (smooth margin)</div>
+                    <div class="key-choice" onclick="keyChoice(3, 'serrate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(3, 'serrate')">Serrate (saw-toothed)</div>
+                    <div class="key-choice" onclick="keyChoice(3, 'crenate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') keyChoice(3, 'crenate')">Crenate (rounded teeth)</div>
+                `;
+            } else if (choice === 'whorled') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Acacia verticillata</strong> (Prickly Moses)';
+                resultDesc.innerHTML = 'Shrub with whorled phyllodes, yellow flowers, widespread in wet areas.';
+                if (noResult) noResult.style.display = 'none';
+                markSectionComplete('section2');
+            } else if (choice === 'pinnate') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Polystichum proliferum</strong> (Mother Shield Fern)';
+                resultDesc.innerHTML = 'Common fern with pinnate fronds, widespread in wet forests.';
+                if (noResult) noResult.style.display = 'none';
+                markSectionComplete('section2');
+            } else if (choice === 'bipinnate') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Acacia dealbata</strong> (Silver Wattle)';
+                resultDesc.innerHTML = 'Tree with bipinnate leaves, yellow flowers, widespread.';
+                if (noResult) noResult.style.display = 'none';
+                markSectionComplete('section2');
+            } else if (choice === 'palmate') {
+                if (noResult) {
+                    result.style.display = 'none';
+                    noResult.style.display = 'block';
+                }
+            }
+        } else if (step === 3) {
+            step3.style.display = 'none';
+            result.style.display = 'block';
+            
+            if (choice === 'lanceolate') {
+                resultText.innerHTML = '<strong>Eucalyptus globulus</strong> (Tasmanian Blue Gum)';
+                resultDesc.innerHTML = 'Tree with alternate, lanceolate leaves, smooth bark.';
+            } else if (choice === 'linear') {
+                resultText.innerHTML = '<strong>Richea sprengelioides</strong>';
+                resultDesc.innerHTML = 'Shrub with linear, revolute leaves, white-pink flowers.';
+            } else if (choice === 'ovate') {
+                resultText.innerHTML = '<strong>Eucalyptus ovata</strong> (Black Gum)';
+                resultDesc.innerHTML = 'Tree with ovate leaves, rough bark at base.';
+            } else if (choice === 'entire') {
+                resultText.innerHTML = '<strong>Atherosperma moschatum</strong> (Southern Sassafras)';
+                resultDesc.innerHTML = 'Tree with opposite, entire leaves, aromatic bark.';
+            } else if (choice === 'serrate') {
+                resultText.innerHTML = '<strong>Nothofagus cunninghamii</strong> (Myrtle Beech)';
+                resultDesc.innerHTML = 'Tree with opposite, serrate leaves, dominant in rainforest.';
+            } else if (choice === 'crenate') {
+                resultText.innerHTML = '<strong>Bedfordia salicina</strong> (Tasmanian Blanket Leaf)';
+                resultDesc.innerHTML = 'Shrub with crenate margins, white tomentose beneath.';
+            }
+            if (noResult) noResult.style.display = 'none';
+            markSectionComplete('section2');
+        }
+    }
+    
+    function resetKey() {
+        document.getElementById('key-step-1').style.display = 'flex';
+        document.getElementById('key-step-2').style.display = 'none';
+        document.getElementById('key-step-3').style.display = 'none';
+        document.getElementById('key-result').style.display = 'none';
+        document.getElementById('no-result-message').style.display = 'none';
+    }
+    
+    // Leaf morphology quiz
+    function checkLeafQuiz() {
+        const select1 = document.getElementById('leaf-q1-select');
+        const select2 = document.getElementById('leaf-q2-select');
+        const input3 = document.getElementById('leaf-q3-input');
+        
+        const feedback1 = document.getElementById('feedback-leaf-q1');
+        const feedback2 = document.getElementById('feedback-leaf-q2');
+        const feedback3 = document.getElementById('feedback-leaf-q3');
+        
+        let score = 0;
+        let results = [];
+        
+        // Question 1
+        if (select1 && select1.value === 'Nothofagus cunninghamii') {
+            feedback1.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Nothofagus cunninghamii has opposite, ovate, serrate leaves.</div>';
+            feedback1.className = 'answer-feedback correct';
+            score++;
+            results.push({q: 1, correct: true});
+            
+            const container = feedback1.closest('.question-container');
+            if (container) {
+                container.classList.add('completed');
+                container.classList.remove('incorrect');
+            }
+        } else if (select1) {
+            feedback1.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Try again. Hint: Look for a common rainforest tree with opposite leaves.</div>';
+            feedback1.className = 'answer-feedback incorrect';
+            results.push({q: 1, correct: false});
+            
+            const container = feedback1.closest('.question-container');
+            if (container) {
+                container.classList.add('incorrect');
+                container.classList.remove('completed');
+            }
+        }
+        
+        // Question 2
+        if (select2 && select2.value === 'Revolute') {
+            feedback2.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Revolute margins are rolled under.</div>';
+            feedback2.className = 'answer-feedback correct';
+            score++;
+            results.push({q: 2, correct: true});
+            
+            const container = feedback2.closest('.question-container');
+            if (container) {
+                container.classList.add('completed');
+                container.classList.remove('incorrect');
+            }
+        } else if (select2) {
+            feedback2.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Try again. The term for margins rolled under is revolute.</div>';
+            feedback2.className = 'answer-feedback incorrect';
+            results.push({q: 2, correct: false});
+            
+            const container = feedback2.closest('.question-container');
+            if (container) {
+                container.classList.add('incorrect');
+                container.classList.remove('completed');
+            }
+        }
+        
+        // Question 3
+        if (input3 && input3.value.toLowerCase().includes('phyllode')) {
+            feedback3.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Acacia melanoxylon has phyllodes.</div>';
+            feedback3.className = 'answer-feedback correct';
+            score++;
+            results.push({q: 3, correct: true});
+            
+            const container = feedback3.closest('.question-container');
+            if (container) {
+                container.classList.add('completed');
+                container.classList.remove('incorrect', 'partial');
+            }
+        } else if (input3) {
+            const userAnswer = input3.value.toLowerCase();
+            if (userAnswer.includes('phyllod')) {
+                feedback3.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Close! The correct term is "phyllodes".</div>';
+                feedback3.className = 'answer-feedback partial';
+                results.push({q: 3, correct: false, partial: true});
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                }
+            } else {
+                feedback3.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ The answer is phyllodes - flattened petioles that function as leaves.</div>';
+                feedback3.className = 'answer-feedback incorrect';
+                results.push({q: 3, correct: false});
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Show overall results
+        const resultsDiv = document.getElementById('leaf-quiz-results');
         if (resultsDiv) {
             resultsDiv.style.display = 'block';
             resultsDiv.innerHTML = `
-                <div class="quiz-score">Exam ${examNum} Model Answers</div>
-                <p><i class="fas fa-info-circle"></i> Model answers are displayed below each question. Review them carefully to understand the correct responses.</p>
+                <div class="quiz-score">You scored ${score} out of 3</div>
+                <p>${score === 3 ? 'Excellent! You\'ve mastered leaf morphology.' : 
+                     score === 2 ? 'Good work! Review the terms you missed.' : 
+                     'Keep practicing! Review the leaf morphology section.'}</p>
+            `;
+        }
+        
+        if (score === 3) {
+            markSectionComplete('section2');
+        }
+    }
+    
+    // Flower morphology quiz
+    function checkFlowerQuiz() {
+        const input1 = document.getElementById('flower-q1-textarea');
+        const input2 = document.getElementById('flower-q2-input');
+        const textarea3 = document.getElementById('flower-q3-textarea');
+        
+        const feedback1 = document.getElementById('feedback-flower-q1');
+        const feedback2 = document.getElementById('feedback-flower-q2');
+        const feedback3 = document.getElementById('feedback-flower-q3');
+        
+        let score = 0;
+        let results = [];
+        
+        // Question 1
+        if (input1) {
+            const answer = input1.value.toLowerCase();
+            const hasSepal = answer.includes('sepal');
+            const hasPetal = answer.includes('petal');
+            const hasStamen = answer.includes('stamen') || answer.includes('androecium');
+            const hasCarpel = answer.includes('carpel') || answer.includes('gynoecium');
+            
+            if (hasSepal && hasPetal && hasStamen && hasCarpel) {
+                feedback1.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! The four whorls are sepals (calyx), petals (corolla), stamens (androecium), and carpels (gynoecium).</div>';
+                feedback1.className = 'answer-feedback correct';
+                score++;
+                results.push({q: 1, correct: true});
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect', 'partial');
+                }
+            } else {
+                let feedback = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ The four whorls are: ';
+                let missing = [];
+                if (!hasSepal) missing.push('sepals');
+                if (!hasPetal) missing.push('petals');
+                if (!hasStamen) missing.push('stamens');
+                if (!hasCarpel) missing.push('carpels');
+                feedback += missing.join(', ') + '.</div>';
+                feedback1.innerHTML = feedback;
+                feedback1.className = 'answer-feedback incorrect';
+                results.push({q: 1, correct: false});
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Question 2
+        if (input2 && input2.value.toLowerCase().includes('telopea')) {
+            feedback2.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Telopea truncata (Tasmanian waratah) has red flowers and woody follicles.</div>';
+            feedback2.className = 'answer-feedback correct';
+            score++;
+            results.push({q: 2, correct: true});
+            
+            const container = feedback2.closest('.question-container');
+            if (container) {
+                container.classList.add('completed');
+                container.classList.remove('incorrect', 'partial');
+            }
+        } else if (input2) {
+            const answer = input2.value.toLowerCase();
+            if (answer.includes('waratah') || answer.includes('telopea')) {
+                feedback2.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Close! The full genus name is Telopea truncata.</div>';
+                feedback2.className = 'answer-feedback partial';
+                results.push({q: 2, correct: false, partial: true});
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                }
+            } else {
+                feedback2.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ The answer is Telopea truncata (Tasmanian waratah).</div>';
+                feedback2.className = 'answer-feedback incorrect';
+                results.push({q: 2, correct: false});
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Question 3
+        if (textarea3) {
+            const answer = textarea3.value.toLowerCase();
+            const hasCapsule = answer.includes('capsule');
+            const hasNut = answer.includes('nut');
+            const hasBerry = answer.includes('berry');
+            
+            if (hasCapsule && hasNut && hasBerry) {
+                feedback3.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Eucalyptus = capsule, Nothofagus = nut, Tasmannia = berry.</div>';
+                feedback3.className = 'answer-feedback correct';
+                score++;
+                results.push({q: 3, correct: true});
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect', 'partial');
+                }
+            } else {
+                let missing = [];
+                if (!hasCapsule) missing.push('Eucalyptus: capsule');
+                if (!hasNut) missing.push('Nothofagus: nut');
+                if (!hasBerry) missing.push('Tasmannia: berry');
+                
+                feedback3.innerHTML = `<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Missing: ${missing.join(', ')}.</div>`;
+                feedback3.className = 'answer-feedback incorrect';
+                results.push({q: 3, correct: false});
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Show overall results
+        const resultsDiv = document.getElementById('flower-quiz-results');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="quiz-score">You scored ${score} out of 3</div>
+                <p>${score === 3 ? 'Excellent! You\'ve mastered flower morphology.' : 
+                     score >= 2 ? 'Good work! Review the flower structure section.' : 
+                     'Keep practicing! Review the flower morphology section.'}</p>
             `;
         }
     }
-}
-```
-
-Also, make sure the correct-answer divs in your practice exams have the right content. They should look like this:
-
-```html
-<div class="correct-answer" style="display: none;">Correct answer: b) Eucalyptus globulus</div>
-```
-
-The issue was that the showExamAnswers function wasn't properly implemented to display the hidden correct answers. The fix above will:
-
-1. Find all question containers in the selected exam
-2. Locate the hidden correct-answer divs
-3. Display them
-4. Add visual feedback showing the model answers
-
-This should make the "Show Answers" buttons work correctly for all three practice exams.
+    
+    // Reproductive structures quiz
+    function checkReproQuiz() {
+        const input1 = document.getElementById('repro-q1-input');
+        const input2 = document.getElementById('repro-q2-input');
+        
+        const feedback1 = document.getElementById('feedback-repro-q1');
+        const feedback2 = document.getElementById('feedback-repro-q2');
+        
+        let score = 0;
+        
+        // Question 1
+        if (input1 && input1.value.toLowerCase().includes('microcachrys')) {
+            feedback1.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Microcachrys tetragona (creeping pine) has bright red, berry-like cones.</div>';
+            feedback1.className = 'answer-feedback correct';
+            score++;
+            
+            const container = feedback1.closest('.question-container');
+            if (container) {
+                container.classList.add('completed');
+                container.classList.remove('incorrect', 'partial');
+            }
+        } else if (input1) {
+            const answer = input1.value.toLowerCase();
+            if (answer.includes('micro') || answer.includes('creeping')) {
+                feedback1.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Close! The scientific name is Microcachrys tetragona (creeping pine).</div>';
+                feedback1.className = 'answer-feedback partial';
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                }
+            } else {
+                feedback1.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ The answer is Microcachrys tetragona (creeping pine).</div>';
+                feedback1.className = 'answer-feedback incorrect';
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Question 2
+        if (input2 && input2.value.toLowerCase().includes('sori')) {
+            feedback2.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Sori (singular: sorus) are the spore-producing structures on ferns.</div>';
+            feedback2.className = 'answer-feedback correct';
+            score++;
+            
+            const container = feedback2.closest('.question-container');
+            if (container) {
+                container.classList.add('completed');
+                container.classList.remove('incorrect', 'partial');
+            }
+        } else if (input2 && input2.value.toLowerCase().includes('sporangia')) {
+            feedback2.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Close! Sporangia are the individual structures, but clusters are called sori.</div>';
+            feedback2.className = 'answer-feedback partial';
+            
+            const container = feedback2.closest('.question-container');
+            if (container) {
+                container.classList.add('partial');
+                container.classList.remove('completed', 'incorrect');
+            }
+        } else if (input2) {
+            feedback2.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ The answer is sori (clusters of sporangia).</div>';
+            feedback2.className = 'answer-feedback incorrect';
+            
+            const container = feedback2.closest('.question-container');
+            if (container) {
+                container.classList.add('incorrect');
+                container.classList.remove('completed', 'partial');
+            }
+        }
+        
+        // Show overall results
+        const resultsDiv = document.getElementById('repro-quiz-results');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="quiz-score">You scored ${score} out of 2</div>
+                <p>${score === 2 ? 'Excellent! You\'ve mastered reproductive structures.' : 
+                     score === 1 ? 'Good work! Review the gymnosperm and fern sections.' : 
+                     'Keep practicing! Review the reproductive structures section.'}</p>
+            `;
+        }
+        
+        if (score === 2) {
+            markSectionComplete('section5');
+        }
+    }
+    
+    // Quiz data for Section 1
+    const quizData = {
+        quiz1: {
+            questions: [
+                {
+                    id: 1,
+                    question: "List the eight main levels of the taxonomic hierarchy from broadest to most specific.",
+                    modelAnswer: "Domain, Kingdom, Division (or Phylum), Class, Order, Family, Genus, Species.",
+                    keywords: ["domain", "kingdom", "division", "phylum", "class", "order", "family", "genus", "species"]
+                },
+                {
+                    id: 2,
+                    question: "What are the two parts of a binomial name and how should they be formatted when typed and when handwritten?",
+                    modelAnswer: "The two parts are the genus (capitalized) and the species epithet (lowercase). When typed, both should be italicized. When handwritten, they should be underlined separately.",
+                    keywords: ["genus", "species", "italicized", "capitalized", "lowercase", "underlined"]
+                },
+                {
+                    id: 3,
+                    question: "Name three plant divisions present in Tasmania and provide one example species for each.",
+                    modelAnswer: "1. Magnoliophyta (angiosperms) - Eucalyptus globulus. 2. Pinophyta (gymnosperms) - Athrotaxis selaginoides. 3. Pteridophyta (ferns) - Dicksonia antarctica.",
+                    keywords: ["magnoliophyta", "pinophyta", "pteridophyta", "angiosperm", "gymnosperm", "fern", "eucalyptus", "athrotaxis", "dicksonia"]
+                }
+            ]
+        }
+    };
+    
+    function checkQuiz(quizId) {
+        const quiz = quizData[quizId];
+        if (!quiz) return;
+        
+        let totalScore = 0;
+        let maxScore = quiz.questions.length;
+        let results = [];
+        
+        quiz.questions.forEach(q => {
+            const textarea = document.querySelector(`#${currentTab} textarea[data-question="${q.id}"]`);
+            const feedback = document.getElementById(`feedback-${quizId}-${q.id}`);
+            const container = document.getElementById(`q${quizId.charAt(quizId.length-1)}-${q.id}`);
+            
+            if (textarea && feedback && container) {
+                const answer = textarea.value.toLowerCase();
+                
+                let keywordCount = 0;
+                q.keywords.forEach(keyword => {
+                    if (answer.includes(keyword.toLowerCase())) {
+                        keywordCount++;
+                    }
+                });
+                
+                const threshold = Math.ceil(q.keywords.length * 0.4);
+                
+                if (keywordCount >= threshold) {
+                    feedback.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> Good answer! You\'ve covered the key concepts.</div>';
+                    feedback.className = 'answer-feedback correct';
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect', 'partial');
+                    totalScore++;
+                    results.push({id: q.id, correct: true});
+                } else if (keywordCount >= threshold * 0.5) {
+                    feedback.innerHTML = `<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> Partial answer. Include key terms like: ${q.keywords.slice(0,4).join(', ')}.</div>`;
+                    feedback.className = 'answer-feedback partial';
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                    results.push({id: q.id, correct: false, partial: true});
+                } else {
+                    feedback.innerHTML = `<div class="answer-feedback incorrect"><i class="fas fa-exclamation-circle"></i> Your answer needs improvement. Key terms: ${q.keywords.slice(0,4).join(', ')}.</div>`;
+                    feedback.className = 'answer-feedback incorrect';
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                    results.push({id: q.id, correct: false});
+                }
+                
+                feedback.style.display = 'flex';
+            }
+        });
+        
+        // Show overall results
+        const resultsDiv = document.getElementById(`${quizId}-results`);
+        if (resultsDiv) {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="quiz-score">You scored ${totalScore} out of ${maxScore}</div>
+                <p>${totalScore === maxScore ? 'Excellent! You\'ve mastered this section.' : 
+                     totalScore >= maxScore-1 ? 'Good work! Review the questions you missed.' : 
+                     'Keep practicing! Review the section content and try again.'}</p>
+            `;
+        }
+        
+        if (totalScore === maxScore) {
+            markSectionComplete(currentTab);
+        }
+    }
+    
+    function showAnswers(quizId) {
+        const quiz = quizData[quizId];
+        if (!quiz) return;
+        
+        quiz.questions.forEach(q => {
+            const feedback = document.getElementById(`feedback-${quizId}-${q.id}`);
+            if (feedback) {
+                feedback.innerHTML = `
+                    <div class="answer-feedback correct" style="background-color: #e3f2fd;">
+                        <strong>Model Answer:</strong> ${q.modelAnswer}
+                    </div>
+                `;
+                feedback.style.display = 'block';
+            }
+        });
+    }
+    
+    // Key simulation functions for Section 6
+    function rainforestKeyChoice(step, choice) {
+        const step1 = document.getElementById('rainforest-key-1');
+        const step2 = document.getElementById('rainforest-key-2');
+        const step3 = document.getElementById('rainforest-key-3');
+        const step4 = document.getElementById('rainforest-key-4');
+        const result = document.getElementById('rainforest-result');
+        const resultText = document.getElementById('rainforest-result-text');
+        const resultDesc = document.getElementById('rainforest-result-description');
+        const noResult = document.getElementById('rainforest-no-result');
+        
+        if (step === 1) {
+            step1.style.display = 'none';
+            step2.style.display = 'block';
+            
+            if (choice === 'simple') {
+                step2.innerHTML = `
+                    <h4>Step 2: Leaf Arrangement</h4>
+                    <div class="key-choice" onclick="rainforestKeyChoice(2, 'alternate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(2, 'alternate')">Leaves alternate</div>
+                    <div class="key-choice" onclick="rainforestKeyChoice(2, 'opposite')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(2, 'opposite')">Leaves opposite</div>
+                    <div class="key-choice" onclick="rainforestKeyChoice(2, 'whorled')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(2, 'whorled')">Leaves whorled</div>
+                `;
+            } else if (choice === 'compound') {
+                step2.innerHTML = `
+                    <h4>Step 2: Compound Leaf Type</h4>
+                    <div class="key-choice" onclick="rainforestKeyChoice(2, 'fern')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(2, 'fern')">Fern-like, pinnate fronds</div>
+                    <div class="key-choice" onclick="rainforestKeyChoice(2, 'palmate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(2, 'palmate')">Palmately compound</div>
+                    <div class="key-choice" onclick="rainforestKeyChoice(2, 'cladode')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(2, 'cladode')">Cladodes (flattened stems)</div>
+                `;
+            }
+            if (noResult) noResult.style.display = 'none';
+        } else if (step === 2) {
+            step2.style.display = 'none';
+            
+            if (choice === 'alternate') {
+                step3.style.display = 'block';
+                step3.innerHTML = `
+                    <h4>Step 3: Leaf Shape</h4>
+                    <div class="key-choice" onclick="rainforestKeyChoice(3, 'ovate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(3, 'ovate')">Ovate (egg-shaped) - Myrtle Beech</div>
+                    <div class="key-choice" onclick="rainforestKeyChoice(3, 'lanceolate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(3, 'lanceolate')">Lanceolate - Sassafras</div>
+                    <div class="key-choice" onclick="rainforestKeyChoice(3, 'linear')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(3, 'linear')">Linear - Pandani</div>
+                `;
+            } else if (choice === 'opposite') {
+                step3.style.display = 'block';
+                step3.innerHTML = `
+                    <h4>Step 3: Leaf Margin</h4>
+                    <div class="key-choice" onclick="rainforestKeyChoice(3, 'entire')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(3, 'entire')">Entire margin - Atherosperma moschatum</div>
+                    <div class="key-choice" onclick="rainforestKeyChoice(3, 'serrate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(3, 'serrate')">Serrate margin - Nothofagus cunninghamii</div>
+                    <div class="key-choice" onclick="rainforestKeyChoice(3, 'crenate')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') rainforestKeyChoice(3, 'crenate')">Crenate margin - Bedfordia salicina</div>
+                `;
+            } else if (choice === 'whorled') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Acacia verticillata</strong> (Prickly Moses)';
+                resultDesc.innerHTML = 'Shrub with whorled phyllodes, common in wet areas.';
+                if (noResult) noResult.style.display = 'none';
+                markSectionComplete('section6');
+            } else if (choice === 'fern') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Dicksonia antarctica</strong> (Soft Tree Fern)';
+                resultDesc.innerHTML = 'Large tree fern with pinnate fronds, common in wet forest.';
+                if (noResult) noResult.style.display = 'none';
+                markSectionComplete('section6');
+            } else if (choice === 'cladode') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Phyllocladus aspleniifolius</strong> (Celery-top Pine)';
+                resultDesc.innerHTML = 'Tree with cladodes resembling celery leaves.';
+                if (noResult) noResult.style.display = 'none';
+                markSectionComplete('section6');
+            } else if (choice === 'palmate') {
+                if (noResult) {
+                    result.style.display = 'none';
+                    noResult.style.display = 'block';
+                }
+            }
+        } else if (step === 3) {
+            step3.style.display = 'none';
+            result.style.display = 'block';
+            
+            if (choice === 'ovate') {
+                resultText.innerHTML = '<strong>Nothofagus cunninghamii</strong> (Myrtle Beech)';
+                resultDesc.innerHTML = 'Dominant rainforest tree, ovate leaves with serrate margins.';
+            } else if (choice === 'lanceolate') {
+                resultText.innerHTML = '<strong>Atherosperma moschatum</strong> (Southern Sassafras)';
+                resultDesc.innerHTML = 'Tree with aromatic bark, lanceolate leaves, white flowers.';
+            } else if (choice === 'linear') {
+                resultText.innerHTML = '<strong>Richea pandanifolia</strong> (Pandani)';
+                resultDesc.innerHTML = 'Tall shrub with linear, revolute leaves in terminal tufts.';
+            } else if (choice === 'entire') {
+                resultText.innerHTML = '<strong>Atherosperma moschatum</strong> (Southern Sassafras)';
+                resultDesc.innerHTML = 'Tree with opposite, entire leaves, aromatic bark.';
+            } else if (choice === 'serrate') {
+                resultText.innerHTML = '<strong>Nothofagus cunninghamii</strong> (Myrtle Beech)';
+                resultDesc.innerHTML = 'Dominant rainforest tree with opposite, serrate leaves.';
+            } else if (choice === 'crenate') {
+                resultText.innerHTML = '<strong>Bedfordia salicina</strong> (Tasmanian Blanket Leaf)';
+                resultDesc.innerHTML = 'Shrub with white tomentose undersides, crenate margins.';
+            }
+            if (noResult) noResult.style.display = 'none';
+            markSectionComplete('section6');
+        }
+    }
+    
+    function resetRainforestKey() {
+        document.getElementById('rainforest-key-1').style.display = 'flex';
+        document.getElementById('rainforest-key-2').style.display = 'none';
+        document.getElementById('rainforest-key-3').style.display = 'none';
+        document.getElementById('rainforest-key-4').style.display = 'none';
+        document.getElementById('rainforest-result').style.display = 'none';
+        document.getElementById('rainforest-no-result').style.display = 'none';
+    }
+    
+    function eucalyptKeyChoice(step, choice) {
+        const step1 = document.getElementById('eucalypt-key-1');
+        const step2 = document.getElementById('eucalypt-key-2');
+        const step3 = document.getElementById('eucalypt-key-3');
+        const result = document.getElementById('eucalypt-result');
+        const resultText = document.getElementById('eucalypt-result-text');
+        const resultDesc = document.getElementById('eucalypt-result-description');
+        const noResult = document.getElementById('eucalypt-no-result');
+        
+        if (step === 1) {
+            step1.style.display = 'none';
+            step2.style.display = 'block';
+            
+            if (choice === 'smooth') {
+                step2.innerHTML = `
+                    <h4>Step 2: Smooth Bark Eucalypts</h4>
+                    <div class="key-choice" onclick="eucalyptKeyChoice(2, 'globulus')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'globulus')">Large fruit (>1.5cm), juvenile leaves opposite, adult leaves alternate - E. globulus</div>
+                    <div class="key-choice" onclick="eucalyptKeyChoice(2, 'viminalis')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'viminalis')">Narrow leaves, white bark - E. viminalis</div>
+                    <div class="key-choice" onclick="eucalyptKeyChoice(2, 'coccifera')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'coccifera')">Alpine, glaucous leaves - E. coccifera</div>
+                `;
+            } else if (choice === 'rough') {
+                step2.innerHTML = `
+                    <h4>Step 2: Rough Bark Eucalypts</h4>
+                    <div class="key-choice" onclick="eucalyptKeyChoice(2, 'stringy')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'stringy')">Stringy fibrous bark - Stringybarks</div>
+                    <div class="key-choice" onclick="eucalyptKeyChoice(2, 'peppermint')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'peppermint')">Fine fibrous bark - Peppermints</div>
+                    <div class="key-choice" onclick="eucalyptKeyChoice(2, 'ribbon')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(2, 'ribbon')">Ribbon bark at base - E. delegatensis</div>
+                `;
+            }
+            if (noResult) noResult.style.display = 'none';
+        } else if (step === 2) {
+            step2.style.display = 'none';
+            
+            if (choice === 'globulus') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Eucalyptus globulus</strong> (Tasmanian Blue Gum)';
+                resultDesc.innerHTML = 'Tall tree with smooth bark, large fruit, juvenile leaves opposite, adult leaves alternate.';
+                if (noResult) noResult.style.display = 'none';
+            } else if (choice === 'viminalis') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Eucalyptus viminalis</strong> (White Gum)';
+                resultDesc.innerHTML = 'Tree with smooth white bark, narrow lanceolate leaves.';
+                if (noResult) noResult.style.display = 'none';
+            } else if (choice === 'coccifera') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Eucalyptus coccifera</strong> (Tasmanian Snow Gum)';
+                resultDesc.innerHTML = 'Alpine tree with smooth white bark, glaucous leaves.';
+                if (noResult) noResult.style.display = 'none';
+            } else if (choice === 'stringy') {
+                step3.style.display = 'block';
+                step3.innerHTML = `
+                    <h4>Step 3: Stringybark Types</h4>
+                    <div class="key-choice" onclick="eucalyptKeyChoice(3, 'obliqua')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(3, 'obliqua')">Falcate leaves, widespread - E. obliqua</div>
+                    <div class="key-choice" onclick="eucalyptKeyChoice(3, 'amygdalina')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(3, 'amygdalina')">Narrow leaves - E. amygdalina</div>
+                    <div class="key-choice" onclick="eucalyptKeyChoice(3, 'tenuiramis')" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ') eucalyptKeyChoice(3, 'tenuiramis')">Glaucous leaves - E. tenuiramis</div>
+                `;
+            } else if (choice === 'peppermint') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Eucalyptus pulchella</strong> (White Peppermint)';
+                resultDesc.innerHTML = 'Small tree with fine fibrous bark, very narrow leaves.';
+                if (noResult) noResult.style.display = 'none';
+            } else if (choice === 'ribbon') {
+                result.style.display = 'block';
+                resultText.innerHTML = '<strong>Eucalyptus delegatensis</strong> (Alpine Ash)';
+                resultDesc.innerHTML = 'Tall tree with rough ribbon bark at base, smooth above.';
+                if (noResult) noResult.style.display = 'none';
+            } else {
+                if (noResult) {
+                    result.style.display = 'none';
+                    noResult.style.display = 'block';
+                }
+            }
+        } else if (step === 3) {
+            step3.style.display = 'none';
+            result.style.display = 'block';
+            
+            if (choice === 'obliqua') {
+                resultText.innerHTML = '<strong>Eucalyptus obliqua</strong> (Messmate)';
+                resultDesc.innerHTML = 'Tall tree with stringy bark, falcate leaves, widespread.';
+            } else if (choice === 'amygdalina') {
+                resultText.innerHTML = '<strong>Eucalyptus amygdalina</strong> (Black Peppermint)';
+                resultDesc.innerHTML = 'Tree with fibrous bark, narrow leaves, eastern Tasmania.';
+            } else if (choice === 'tenuiramis') {
+                resultText.innerHTML = '<strong>Eucalyptus tenuiramis</strong> (Silver Peppermint)';
+                resultDesc.innerHTML = 'Tree with glaucous leaves, rough bark, southeast Tasmania.';
+            } else {
+                if (noResult) {
+                    result.style.display = 'none';
+                    noResult.style.display = 'block';
+                }
+            }
+            if (noResult) noResult.style.display = 'none';
+            markSectionComplete('section6');
+        }
+    }
+    
+    function resetEucalyptKey() {
+        document.getElementById('eucalypt-key-1').style.display = 'flex';
+        document.getElementById('eucalypt-key-2').style.display = 'none';
+        document.getElementById('eucalypt-key-3').style.display = 'none';
+        document.getElementById('eucalypt-result').style.display = 'none';
+        document.getElementById('eucalypt-no-result').style.display = 'none';
+    }
+    
+    // Quiz functions for new sections
+    function checkKeyQuiz() {
+        const input1 = document.querySelector('[data-question="key1"]');
+        const textarea2 = document.querySelector('[data-question="key2"]');
+        const textarea3 = document.querySelector('[data-question="key3"]');
+        
+        const feedback1 = document.getElementById('feedback-key-q1');
+        const feedback2 = document.getElementById('feedback-key-q2');
+        const feedback3 = document.getElementById('feedback-key-q3');
+        
+        let score = 0;
+        
+        // Question 1
+        if (input1 && input1.value.toLowerCase().includes('lead')) {
+            feedback1.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Each option in a couplet is called a lead.</div>';
+            feedback1.className = 'answer-feedback correct';
+            score++;
+            
+            const container = feedback1.closest('.question-container');
+            if (container) {
+                container.classList.add('completed');
+                container.classList.remove('incorrect');
+            }
+        } else if (input1) {
+            feedback1.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ The correct answer is "leads".</div>';
+            feedback1.className = 'answer-feedback incorrect';
+            
+            const container = feedback1.closest('.question-container');
+            if (container) {
+                container.classList.add('incorrect');
+                container.classList.remove('completed');
+            }
+        }
+        
+        // Question 2
+        if (textarea2) {
+            const answer = textarea2.value.toLowerCase();
+            const hasIndented = answer.includes('indented') && (answer.includes('visually') || answer.includes('clear') || answer.includes('hierarchy'));
+            const hasBracketed = answer.includes('bracketed') && (answer.includes('compact') || answer.includes('efficient'));
+            
+            if (hasIndented && hasBracketed) {
+                feedback2.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Good answer! Indented keys show hierarchy visually; bracketed keys are compact and efficient.</div>';
+                feedback2.className = 'answer-feedback correct';
+                score++;
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect', 'partial');
+                }
+            } else if (hasIndented || hasBracketed) {
+                feedback2.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Partial answer. Include both key types and their advantages.</div>';
+                feedback2.className = 'answer-feedback partial';
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                }
+            } else {
+                feedback2.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Indented keys are visually clear; bracketed keys are compact and efficient.</div>';
+                feedback2.className = 'answer-feedback incorrect';
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Question 3
+        if (textarea3) {
+            const answer = textarea3.value.toLowerCase();
+            if (answer.includes('back') || answer.includes('start') || answer.includes('trace') || answer.includes('previous')) {
+                feedback3.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Go back to the couplet where you might have made the wrong choice and try the alternative.</div>';
+                feedback3.className = 'answer-feedback correct';
+                score++;
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect');
+                }
+            } else {
+                feedback3.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Go back to the previous couplet and try the alternative lead.</div>';
+                feedback3.className = 'answer-feedback incorrect';
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed');
+                }
+            }
+        }
+        
+        // Show overall results
+        const resultsDiv = document.getElementById('key-quiz-results');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="quiz-score">You scored ${score} out of 3</div>
+                <p>${score === 3 ? 'Excellent! You\'ve mastered key usage.' : 
+                     score >= 2 ? 'Good work! Review the key terminology.' : 
+                     'Keep practicing! Review Section 6 on identification keys.'}</p>
+            `;
+        }
+        
+        if (score === 3) {
+            markSectionComplete('section6');
+        }
+    }
+    
+    function showKeyModelAnswers() {
+        const modelAnswers = {
+            key1: "Leads",
+            key2: "Indented keys (visually clear hierarchy) and Bracketed keys (compact and efficient)",
+            key3: "Go back to the previous couplet and try the alternative lead"
+        };
+        
+        const feedback1 = document.getElementById('feedback-key-q1');
+        const feedback2 = document.getElementById('feedback-key-q2');
+        const feedback3 = document.getElementById('feedback-key-q3');
+        
+        if (feedback1) {
+            feedback1.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.key1}</div>`;
+            feedback1.style.display = 'block';
+        }
+        if (feedback2) {
+            feedback2.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.key2}</div>`;
+            feedback2.style.display = 'block';
+        }
+        if (feedback3) {
+            feedback3.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.key3}</div>`;
+            feedback3.style.display = 'block';
+        }
+    }
+    
+    function checkThreatenedQuiz() {
+        const input1 = document.querySelector('[data-question="threatened1"]');
+        const textarea2 = document.querySelector('[data-question="threatened2"]');
+        const textarea3 = document.querySelector('[data-question="threatened3"]');
+        
+        const feedback1 = document.getElementById('feedback-threatened-q1');
+        const feedback2 = document.getElementById('feedback-threatened-q2');
+        const feedback3 = document.getElementById('feedback-threatened-q3');
+        
+        let score = 0;
+        
+        // Question 1
+        if (input1) {
+            const answer = input1.value.toLowerCase();
+            if (answer.includes('critically endangered') && answer.includes('endangered') && answer.includes('vulnerable')) {
+                feedback1.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Critically Endangered, Endangered, Vulnerable.</div>';
+                feedback1.className = 'answer-feedback correct';
+                score++;
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect');
+                }
+            } else {
+                feedback1.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ The three categories are: Critically Endangered, Endangered, Vulnerable.</div>';
+                feedback1.className = 'answer-feedback incorrect';
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed');
+                }
+            }
+        }
+        
+        // Question 2
+        if (textarea2) {
+            const answer = textarea2.value.toLowerCase();
+            const hasEpacris = answer.includes('epacris stuartii');
+            const hasCaladenia = answer.includes('caladenia');
+            const hasPrasophyllum = answer.includes('prasophyllum');
+            
+            let correctCount = (hasEpacris ? 1 : 0) + (hasCaladenia ? 1 : 0) + (hasPrasophyllum ? 1 : 0);
+            
+            if (correctCount >= 2) {
+                feedback2.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Good examples! Check the threatened species profiles for detailed threats.</div>';
+                feedback2.className = 'answer-feedback correct';
+                score++;
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect', 'partial');
+                }
+            } else if (correctCount >= 1) {
+                feedback2.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ You named one correct species. Examples: Epacris stuartii, Caladenia tonellii, Prasophyllum apoxychilum.</div>';
+                feedback2.className = 'answer-feedback partial';
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                }
+            } else {
+                feedback2.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Examples: Epacris stuartii (fire, climate), Caladenia tonellii (habitat loss), Prasophyllum apoxychilum (agriculture).</div>';
+                feedback2.className = 'answer-feedback incorrect';
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Question 3
+        if (textarea3) {
+            const answer = textarea3.value.toLowerCase();
+            if ((answer.includes('very high') || answer.includes('extremely high')) && answer.includes('high')) {
+                feedback3.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Endangered = very high risk, Vulnerable = high risk.</div>';
+                feedback3.className = 'answer-feedback correct';
+                score++;
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect');
+                }
+            } else {
+                feedback3.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Endangered faces very high risk, Vulnerable faces high risk of extinction.</div>';
+                feedback3.className = 'answer-feedback incorrect';
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed');
+                }
+            }
+        }
+        
+        // Show overall results
+        const resultsDiv = document.getElementById('threatened-quiz-results');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="quiz-score">You scored ${score} out of 3</div>
+                <p>${score === 3 ? 'Excellent! You\'ve mastered threatened species concepts.' : 
+                     score >= 2 ? 'Good work! Review the threatened species profiles.' : 
+                     'Keep practicing! Review Section 7 on threatened species.'}</p>
+            `;
+        }
+        
+        if (score === 3) {
+            markSectionComplete('section7');
+        }
+    }
+    
+    function showThreatenedModelAnswers() {
+        const modelAnswers = {
+            threatened1: "Critically Endangered, Endangered, Vulnerable (from highest to lowest risk)",
+            threatened2: "Epacris stuartii (fire, climate change), Caladenia tonellii (habitat loss, weed invasion), Prasophyllum apoxychilum (agricultural development)",
+            threatened3: "Endangered = very high risk of extinction, Vulnerable = high risk of extinction"
+        };
+        
+        const feedback1 = document.getElementById('feedback-threatened-q1');
+        const feedback2 = document.getElementById('feedback-threatened-q2');
+        const feedback3 = document.getElementById('feedback-threatened-q3');
+        
+        if (feedback1) {
+            feedback1.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.threatened1}</div>`;
+            feedback1.style.display = 'block';
+        }
+        if (feedback2) {
+            feedback2.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.threatened2}</div>`;
+            feedback2.style.display = 'block';
+        }
+        if (feedback3) {
+            feedback3.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.threatened3}</div>`;
+            feedback3.style.display = 'block';
+        }
+    }
+    
+    function checkHerbQuiz() {
+        const textarea1 = document.querySelector('[data-question="herb1"]');
+        const input2 = document.querySelector('[data-question="herb2"]');
+        const textarea3 = document.querySelector('[data-question="herb3"]');
+        
+        const feedback1 = document.getElementById('feedback-herb-q1');
+        const feedback2 = document.getElementById('feedback-herb-q2');
+        const feedback3 = document.getElementById('feedback-herb-q3');
+        
+        let score = 0;
+        
+        // Question 1
+        if (textarea1) {
+            const answer = textarea1.value.toLowerCase();
+            const hasLocation = answer.includes('location') || answer.includes('locality');
+            const hasDate = answer.includes('date');
+            const hasHabitat = answer.includes('habitat');
+            const hasCollector = answer.includes('collector') || answer.includes('observer');
+            const hasDescription = answer.includes('description') || answer.includes('features');
+            
+            let correctCount = (hasLocation ? 1 : 0) + (hasDate ? 1 : 0) + (hasHabitat ? 1 : 0) + (hasCollector ? 1 : 0) + (hasDescription ? 1 : 0);
+            
+            if (correctCount >= 4) {
+                feedback1.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Location, date, habitat, collector, description are essential.</div>';
+                feedback1.className = 'answer-feedback correct';
+                score++;
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect', 'partial');
+                }
+            } else if (correctCount >= 2) {
+                feedback1.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Partial answer. Essential data: location, date, habitat, collector name, plant description.</div>';
+                feedback1.className = 'answer-feedback partial';
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                }
+            } else {
+                feedback1.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Essential data: location, date, habitat, collector name, plant description.</div>';
+                feedback1.className = 'answer-feedback incorrect';
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Question 2
+        if (input2 && (input2.value.toLowerCase().includes('moisture') || input2.value.toLowerCase().includes('mould') || input2.value.toLowerCase().includes('mold') || input2.value.toLowerCase().includes('dry'))) {
+            feedback2.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! To prevent mould and ensure even drying.</div>';
+            feedback2.className = 'answer-feedback correct';
+            score++;
+            
+            const container = feedback2.closest('.question-container');
+            if (container) {
+                container.classList.add('completed');
+                container.classList.remove('incorrect');
+            }
+        } else if (input2) {
+            feedback2.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ To prevent mould and ensure specimens dry quickly and evenly.</div>';
+            feedback2.className = 'answer-feedback incorrect';
+            
+            const container = feedback2.closest('.question-container');
+            if (container) {
+                container.classList.add('incorrect');
+                container.classList.remove('completed');
+            }
+        }
+        
+        // Question 3
+        if (textarea3) {
+            const answer = textarea3.value.toLowerCase();
+            const hasScientific = answer.includes('scientific') || answer.includes('research');
+            const hasPermit = answer.includes('permit');
+            const hasNRE = answer.includes('NRE') || answer.includes('government');
+            const hasParks = answer.includes('parks') || answer.includes('tasmania');
+            const hasLandholder = answer.includes('landholder') || answer.includes('private') || answer.includes('owner');
+            
+            if ((hasPermit && hasNRE) || (hasPermit && hasParks) || (hasPermit && hasLandholder)) {
+                feedback3.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! Scientific collection permits from NRE, Parks Tasmania, and landholder permission.</div>';
+                feedback3.className = 'answer-feedback correct';
+                score++;
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect', 'partial');
+                }
+            } else if (hasPermit) {
+                feedback3.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ You mentioned permits. Specifically: NRE, Parks Tasmania, and landholder permission.</div>';
+                feedback3.className = 'answer-feedback partial';
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                }
+            } else {
+                feedback3.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Scientific collection permits from NRE, Parks Tasmania, and landholder permission.</div>';
+                feedback3.className = 'answer-feedback incorrect';
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Show overall results
+        const resultsDiv = document.getElementById('herb-quiz-results');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="quiz-score">You scored ${score} out of 3</div>
+                <p>${score === 3 ? 'Excellent! You\'ve mastered herbarium techniques.' : 
+                     score >= 2 ? 'Good work! Review the specimen collection protocols.' : 
+                     'Keep practicing! Review Section 8 on herbarium techniques.'}</p>
+            `;
+        }
+        
+        if (score === 3) {
+            markSectionComplete('section8');
+        }
+    }
+    
+    function showHerbModelAnswers() {
+        const modelAnswers = {
+            herb1: "Location, date, habitat, collector name, plant description, GPS coordinates, associated species",
+            herb2: "To prevent mould and ensure even, rapid drying",
+            herb3: "Scientific collection permits from NRE, Parks Tasmania, and landholder permission"
+        };
+        
+        const feedback1 = document.getElementById('feedback-herb-q1');
+        const feedback2 = document.getElementById('feedback-herb-q2');
+        const feedback3 = document.getElementById('feedback-herb-q3');
+        
+        if (feedback1) {
+            feedback1.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.herb1}</div>`;
+            feedback1.style.display = 'block';
+        }
+        if (feedback2) {
+            feedback2.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.herb2}</div>`;
+            feedback2.style.display = 'block';
+        }
+        if (feedback3) {
+            feedback3.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.herb3}</div>`;
+            feedback3.style.display = 'block';
+        }
+    }
+    
+    function checkWorkplaceQuiz() {
+        const textarea1 = document.querySelector('[data-question="workplace1"]');
+        const textarea2 = document.querySelector('[data-question="workplace2"]');
+        const textarea3 = document.querySelector('[data-question="workplace3"]');
+        
+        const feedback1 = document.getElementById('feedback-workplace-q1');
+        const feedback2 = document.getElementById('feedback-workplace-q2');
+        const feedback3 = document.getElementById('feedback-workplace-q3');
+        
+        let score = 0;
+        
+        // Question 1
+        if (textarea1) {
+            const answer = textarea1.value.toLowerCase();
+            const hasSpecies = answer.includes('species') || answer.includes('name');
+            const hasLocation = answer.includes('location') || answer.includes('locality');
+            const hasHabitat = answer.includes('habitat');
+            const hasDesc = answer.includes('description') || answer.includes('morphology');
+            const hasMethod = answer.includes('method') || answer.includes('key') || answer.includes('identification');
+            const hasConservation = answer.includes('conservation') || answer.includes('status');
+            
+            let correctCount = (hasSpecies ? 1 : 0) + (hasLocation ? 1 : 0) + (hasHabitat ? 1 : 0) + (hasDesc ? 1 : 0) + (hasMethod ? 1 : 0) + (hasConservation ? 1 : 0);
+            
+            if (correctCount >= 4) {
+                feedback1.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Good! Include species, location, habitat, description, identification method, conservation status, observer details.</div>';
+                feedback1.className = 'answer-feedback correct';
+                score++;
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect', 'partial');
+                }
+            } else if (correctCount >= 2) {
+                feedback1.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Partial answer. Include species, location, habitat, description, identification method, conservation status.</div>';
+                feedback1.className = 'answer-feedback partial';
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                }
+            } else {
+                feedback1.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Include: species name, location, habitat, description, identification method, conservation status, observer details.</div>';
+                feedback1.className = 'answer-feedback incorrect';
+                
+                const container = feedback1.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Question 2
+        if (textarea2) {
+            const answer = textarea2.value.toLowerCase();
+            const hasRiver = answer.includes('river') || answer.includes('water') || answer.includes('crossing');
+            const hasRemote = answer.includes('remote') || answer.includes('lost') || answer.includes('navigation');
+            const hasWeather = answer.includes('weather') || answer.includes('exposure') || answer.includes('hypothermia') || answer.includes('sun');
+            
+            if ((hasRiver && hasRemote) || (hasRiver && hasWeather) || (hasRemote && hasWeather)) {
+                feedback2.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Good! River crossings (assess, unzip pack), remote travel (PLB, tell someone), weather exposure (appropriate clothing).</div>';
+                feedback2.className = 'answer-feedback correct';
+                score++;
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect', 'partial');
+                }
+            } else if (hasRiver || hasRemote || hasWeather) {
+                feedback2.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ You listed one activity. Include river crossings, remote travel, and weather exposure.</div>';
+                feedback2.className = 'answer-feedback partial';
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                }
+            } else {
+                feedback2.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Examples: River crossings (assess, use stick), remote travel (PLB, travel plan), weather (check forecast, carry gear).</div>';
+                feedback2.className = 'answer-feedback incorrect';
+                
+                const container = feedback2.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Question 3
+        if (textarea3) {
+            const answer = textarea3.value.toLowerCase();
+            const hasPLB = answer.includes('plb') || answer.includes('epirb') || answer.includes('beacon');
+            const hasFirstAid = answer.includes('first aid');
+            const hasSatellite = answer.includes('satellite') || answer.includes('phone');
+            const hasMap = answer.includes('map') || answer.includes('compass') || answer.includes('gps');
+            const hasFood = answer.includes('food') || answer.includes('water') || answer.includes('shelter');
+            
+            let correctCount = (hasPLB ? 1 : 0) + (hasFirstAid ? 1 : 0) + (hasSatellite ? 1 : 0) + (hasMap ? 1 : 0) + (hasFood ? 1 : 0);
+            
+            if (correctCount >= 4) {
+                feedback3.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct! PLB/EPIRB, first aid kit, satellite phone, map/compass, spare food/water, emergency shelter.</div>';
+                feedback3.className = 'answer-feedback correct';
+                score++;
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('completed');
+                    container.classList.remove('incorrect', 'partial');
+                }
+            } else if (correctCount >= 2) {
+                feedback3.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Partial answer. Essential: PLB/EPIRB, first aid kit, satellite phone, map/compass, spare food/water, emergency shelter.</div>';
+                feedback3.className = 'answer-feedback partial';
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('partial');
+                    container.classList.remove('completed', 'incorrect');
+                }
+            } else {
+                feedback3.innerHTML = '<div class="answer-feedback incorrect"><i class="fas fa-times-circle"></i> ✗ Essential: PLB/EPIRB, first aid kit, satellite phone, map/compass, spare food/water, emergency shelter.</div>';
+                feedback3.className = 'answer-feedback incorrect';
+                
+                const container = feedback3.closest('.question-container');
+                if (container) {
+                    container.classList.add('incorrect');
+                    container.classList.remove('completed', 'partial');
+                }
+            }
+        }
+        
+        // Show overall results
+        const resultsDiv = document.getElementById('workplace-quiz-results');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="quiz-score">You scored ${score} out of 3</div>
+                <p>${score === 3 ? 'Excellent! You\'ve mastered workplace tools.' : 
+                     score >= 2 ? 'Good work! Review the reporting templates and JSA sections.' : 
+                     'Keep practicing! Review Section 10 on workplace tools.'}</p>
+            `;
+        }
+        
+        if (score === 3) {
+            markSectionComplete('section10');
+        }
+    }
+    
+    function showWorkplaceModelAnswers() {
+        const modelAnswers = {
+            workplace1: "Species name, location, habitat, description, identification method, conservation status, observer details, date",
+            workplace2: "River crossings (assess, use stick, unzip pack), Remote travel (PLB, tell someone, stay together), Weather exposure (check forecast, appropriate clothing)",
+            workplace3: "PLB/EPIRB, first aid kit, satellite phone, map/compass, spare food/water, emergency shelter, head torch"
+        };
+        
+        const feedback1 = document.getElementById('feedback-workplace-q1');
+        const feedback2 = document.getElementById('feedback-workplace-q2');
+        const feedback3 = document.getElementById('feedback-workplace-q3');
+        
+        if (feedback1) {
+            feedback1.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.workplace1}</div>`;
+            feedback1.style.display = 'block';
+        }
+        if (feedback2) {
+            feedback2.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.workplace2}</div>`;
+            feedback2.style.display = 'block';
+        }
+        if (feedback3) {
+            feedback3.innerHTML = `<div class="answer-feedback correct"><strong>Model Answer:</strong> ${modelAnswers.workplace3}</div>`;
+            feedback3.style.display = 'block';
+        }
+    }
+    
+    // EXAM FUNCTIONS - These need to be in the global scope
+    function showExamAnswers(examNum) {
+        console.log("showExamAnswers called for exam", examNum);
+        
+        // Get all quiz containers in section 9
+        const examContainers = document.querySelectorAll('#section9 .quiz-container');
+        console.log("Found", examContainers.length, "exam containers");
+        
+        // Find the correct exam container (they're indexed by order)
+        let examIndex = examNum - 1;
+        if (examIndex >= 0 && examIndex < examContainers.length) {
+            const examContainer = examContainers[examIndex];
+            const questionContainers = examContainer.querySelectorAll('.question-container');
+            
+            console.log("Found", questionContainers.length, "questions in exam", examNum);
+            
+            questionContainers.forEach((container, index) => {
+                // Get the correct answer div
+                const correctDiv = container.querySelector('.correct-answer');
+                if (correctDiv) {
+                    // Show the correct answer div
+                    correctDiv.style.display = 'block';
+                    
+                    // Create or update feedback div
+                    let feedbackDiv = container.querySelector('.answer-feedback.model-answer');
+                    if (!feedbackDiv) {
+                        feedbackDiv = document.createElement('div');
+                        feedbackDiv.className = 'answer-feedback correct model-answer';
+                        container.appendChild(feedbackDiv);
+                    }
+                    
+                    // Get the correct answer text
+                    const correctText = correctDiv.textContent.replace('Correct answer:', '').trim();
+                    feedbackDiv.innerHTML = `<i class="fas fa-check-circle"></i> <strong>Model Answer:</strong> ${correctText}`;
+                    feedbackDiv.style.display = 'flex';
+                }
+            });
+            
+            // Show results message
+            const resultsDiv = document.getElementById(`exam${examNum}-results`);
+            if (resultsDiv) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.innerHTML = `
+                    <div class="quiz-score">Exam ${examNum} Model Answers</div>
+                    <p><i class="fas fa-info-circle"></i> Model answers are displayed below each question. Review them carefully to understand the correct responses.</p>
+                `;
+            }
+        } else {
+            console.log("Exam index out of range");
+        }
+    }
+    
+    function checkExam(examNum) {
+        console.log("checkExam called for exam", examNum);
+        
+        const examContainers = document.querySelectorAll('#section9 .quiz-container');
+        let examIndex = examNum - 1;
+        
+        if (examIndex >= 0 && examIndex < examContainers.length) {
+            const examContainer = examContainers[examIndex];
+            const questionContainers = examContainer.querySelectorAll('.question-container');
+            let score = 0;
+            let totalQuestions = questionContainers.length;
+            
+            questionContainers.forEach((container, index) => {
+                const selectElement = container.querySelector('select');
+                const correctDiv = container.querySelector('.correct-answer');
+                
+                if (selectElement && correctDiv) {
+                    const userAnswer = selectElement.value;
+                    const correctText = correctDiv.textContent;
+                    
+                    // Extract correct option letter (a, b, c, d)
+                    const correctMatch = correctText.match(/[a-d]\)/);
+                    const correctLetter = correctMatch ? correctMatch[0].charAt(0) : null;
+                    
+                    // Create feedback div if it doesn't exist
+                    let feedbackDiv = container.querySelector('.answer-feedback:not(.model-answer)');
+                    if (!feedbackDiv) {
+                        feedbackDiv = document.createElement('div');
+                        feedbackDiv.className = 'answer-feedback';
+                        container.appendChild(feedbackDiv);
+                    }
+                    
+                    if (userAnswer && userAnswer === correctLetter) {
+                        feedbackDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✓ Correct!';
+                        feedbackDiv.className = 'answer-feedback correct';
+                        container.classList.add('completed');
+                        container.classList.remove('incorrect');
+                        score++;
+                    } else if (userAnswer) {
+                        feedbackDiv.innerHTML = `<i class="fas fa-times-circle"></i> ✗ Incorrect. ${correctText}`;
+                        feedbackDiv.className = 'answer-feedback incorrect';
+                        container.classList.add('incorrect');
+                        container.classList.remove('completed');
+                    } else {
+                        feedbackDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please select an answer.';
+                        feedbackDiv.className = 'answer-feedback partial';
+                    }
+                    feedbackDiv.style.display = 'flex';
+                }
+                
+                // Handle textarea questions (Exam 2 and 3)
+                const textareaElement = container.querySelector('textarea');
+                if (textareaElement && correctDiv) {
+                    const userAnswer = textareaElement.value.trim();
+                    const correctText = correctDiv.textContent.replace('Correct answer:', '').trim();
+                    
+                    let feedbackDiv = container.querySelector('.answer-feedback:not(.model-answer)');
+                    if (!feedbackDiv) {
+                        feedbackDiv = document.createElement('div');
+                        feedbackDiv.className = 'answer-feedback';
+                        container.appendChild(feedbackDiv);
+                    }
+                    
+                    if (userAnswer.length > 0) {
+                        // Simple keyword matching for text answers
+                        const userLower = userAnswer.toLowerCase();
+                        const correctLower = correctText.toLowerCase();
+                        const keywords = correctLower.split(/\s+/).filter(word => word.length > 3);
+                        
+                        let matches = 0;
+                        keywords.forEach(keyword => {
+                            if (userLower.includes(keyword)) matches++;
+                        });
+                        
+                        if (matches >= Math.min(3, keywords.length * 0.5)) {
+                            feedbackDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✓ Good answer! Compare with model answer below.';
+                            feedbackDiv.className = 'answer-feedback correct';
+                            container.classList.add('completed');
+                            container.classList.remove('incorrect', 'partial');
+                            score += 0.5; // Partial credit for text answers
+                        } else {
+                            feedbackDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Review your answer. Model answer: ${correctText}`;
+                            feedbackDiv.className = 'answer-feedback partial';
+                            container.classList.add('partial');
+                            container.classList.remove('completed', 'incorrect');
+                        }
+                    } else {
+                        feedbackDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please provide an answer.';
+                        feedbackDiv.className = 'answer-feedback partial';
+                    }
+                    feedbackDiv.style.display = 'flex';
+                }
+            });
+            
+            // Show results
+            const resultsDiv = document.getElementById(`exam${examNum}-results`);
+            if (resultsDiv) {
+                resultsDiv.style.display = 'block';
+                const percentage = Math.round((score / totalQuestions) * 100);
+                resultsDiv.innerHTML = `
+                    <div class="quiz-score">You scored ${score.toFixed(1)} out of ${totalQuestions} (${percentage}%)</div>
+                    <p>${percentage >= 80 ? 'Excellent work! You\'re well prepared.' : 
+                         percentage >= 60 ? 'Good effort! Review the questions you missed.' : 
+                         'Keep studying! Review the relevant sections and try again.'}</p>
+                    <p><i class="fas fa-lightbulb"></i> Click "Show Model Answers" to see the correct responses.</p>
+                `;
+            }
+        }
+    }
+    
+    function clearExamAnswers(examNum) {
+        console.log("clearExamAnswers called for exam", examNum);
+        
+        const examContainers = document.querySelectorAll('#section9 .quiz-container');
+        let examIndex = examNum - 1;
+        
+        if (examIndex >= 0 && examIndex < examContainers.length) {
+            const examContainer = examContainers[examIndex];
+            
+            // Clear selects
+            examContainer.querySelectorAll('select').forEach(select => {
+                select.value = '';
+            });
+            
+            // Clear textareas
+            examContainer.querySelectorAll('textarea').forEach(textarea => {
+                textarea.value = '';
+            });
+            
+            // Remove feedback
+            examContainer.querySelectorAll('.answer-feedback').forEach(feedback => {
+                feedback.style.display = 'none';
+            });
+            
+            // Remove question styling
+            examContainer.querySelectorAll('.question-container').forEach(container => {
+                container.classList.remove('completed', 'incorrect', 'partial');
+            });
+            
+            // Hide correct answers
+            examContainer.querySelectorAll('.correct-answer').forEach(correct => {
+                correct.style.display = 'none';
+            });
+            
+            // Hide results
+            const resultsDiv = document.getElementById(`exam${examNum}-results`);
+            if (resultsDiv) {
+                resultsDiv.style.display = 'none';
+            }
+        }
+    }
+    
+    // Herbarium functions
+    function saveHerbariumRecord() {
+        const record = {
+            species: document.getElementById('herb-species').value,
+            family: document.getElementById('herb-family').value,
+            collector: document.getElementById('herb-collector').value,
+            number: document.getElementById('herb-number').value,
+            date: document.getElementById('herb-date').value,
+            location: document.getElementById('herb-location').value,
+            coords: document.getElementById('herb-coords').value,
+            habitat: document.getElementById('herb-habitat').value,
+            description: document.getElementById('herb-desc').value,
+            notes: document.getElementById('herb-notes').value
+        };
+        localStorage.setItem('herbariumRecord', JSON.stringify(record));
+        alert('Herbarium record saved!');
+    }
+    
+    function loadHerbariumRecord() {
+        const saved = localStorage.getItem('herbariumRecord');
+        if (saved) {
+            const record = JSON.parse(saved);
+            document.getElementById('herb-species').value = record.species || '';
+            document.getElementById('herb-family').value = record.family || '';
+            document.getElementById('herb-collector').value = record.collector || '';
+            document.getElementById('herb-number').value = record.number || '';
+            document.getElementById('herb-date').value = record.date || '';
+            document.getElementById('herb-location').value = record.location || '';
+            document.getElementById('herb-coords').value = record.coords || '';
+            document.getElementById('herb-habitat').value = record.habitat || '';
+            document.getElementById('herb-desc').value = record.description || '';
+            document.getElementById('herb-notes').value = record.notes || '';
+            alert('Herbarium record loaded!');
+        } else {
+            alert('No saved herbarium record found.');
+        }
+    }
+    
+    // Print template function
+    function printTemplate() {
+        window.print();
+    }
+    
+    // Species database table functions
+    function renderSpeciesTable() {
+        const tbody = document.getElementById('speciesTableBody');
+        if (!tbody) return;
+        
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageData = filteredSpecies.slice(start, end);
+        
+        tbody.innerHTML = '';
+        pageData.forEach(species => {
+            const row = document.createElement('tr');
+            const statusClass = species.conservation.toLowerCase().replace(/[()]/g, '').replace(/ /g, '-');
+            row.innerHTML = `
+                <td><em>${species.species}</em></td>
+                <td>${species.family}</td>
+                <td>${species.morphology.length > 80 ? species.morphology.substring(0, 80) + '...' : species.morphology}</td>
+                <td>${species.habitat}</td>
+                <td>
+                    <span class="conservation ${statusClass}">
+                        ${species.conservation}
+                    </span>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        // Update pagination info
+        const totalPages = Math.ceil(filteredSpecies.length / rowsPerPage);
+        document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+        document.getElementById('prevPageBtn').disabled = currentPage === 1;
+        document.getElementById('nextPageBtn').disabled = currentPage === totalPages || totalPages === 0;
+    }
+    
+    function filterSpeciesTable() {
+        const searchTerm = document.getElementById('speciesSearch').value.toLowerCase();
+        const conservationFilter = document.getElementById('conservationFilter').value.toLowerCase();
+        const familyFilter = document.getElementById('familyFilter').value;
+        
+        filteredSpecies = speciesDatabase.filter(species => {
+            const matchesSearch = species.species.toLowerCase().includes(searchTerm) ||
+                                 species.family.toLowerCase().includes(searchTerm) ||
+                                 species.habitat.toLowerCase().includes(searchTerm);
+            
+            const matchesConservation = !conservationFilter || 
+                                       species.conservation.toLowerCase().includes(conservationFilter);
+            
+            const matchesFamily = !familyFilter || species.family === familyFilter;
+            
+            return matchesSearch && matchesConservation && matchesFamily;
+        });
+        
+        currentPage = 1;
+        renderSpeciesTable();
+    }
+    
+    function sortTable(column) {
+        filteredSpecies.sort((a, b) => {
+            let valA, valB;
+            
+            if (column === 0) valA = a.species;
+            else if (column === 1) valA = a.family;
+            else if (column === 4) valA = a.conservation;
+            
+            if (column === 0) valB = b.species;
+            else if (column === 1) valB = b.family;
+            else if (column === 4) valB = b.conservation;
+            
+            if (valA < valB) return -1;
+            if (valA > valB) return 1;
+            return 0;
+        });
+        
+        renderSpeciesTable();
+    }
+    
+    function changePage(direction) {
+        const totalPages = Math.ceil(filteredSpecies.length / rowsPerPage);
+        
+        if (direction === 'next' && currentPage < totalPages) {
+            currentPage++;
+        } else if (direction === 'prev' && currentPage > 1) {
+            currentPage--;
+        }
+        
+        renderSpeciesTable();
+    }
+    
+    // Save/Load progress functions
+    function saveProgress() {
+        // Save current tab
+        userProgress.currentTab = currentTab;
+        userProgress.lastSaved = new Date().toISOString();
+        
+        // Save quiz answers
+        if (!userProgress.quizAnswers) userProgress.quizAnswers = {};
+        
+        document.querySelectorAll('textarea[data-question]').forEach(textarea => {
+            const questionId = textarea.getAttribute('data-question');
+            userProgress.quizAnswers[questionId] = textarea.value;
+        });
+        
+        document.querySelectorAll('input[data-question]').forEach(input => {
+            const questionId = input.getAttribute('data-question');
+            userProgress.quizAnswers[questionId] = input.value;
+        });
+        
+        document.querySelectorAll('select[data-question]').forEach(select => {
+            const questionId = select.getAttribute('data-question');
+            userProgress.quizAnswers[questionId] = select.value;
+        });
+        
+        // Save to localStorage
+        localStorage.setItem('ahcpcm303Progress', JSON.stringify(userProgress));
+        
+        // Show success message
+        const message = document.getElementById('saveMessage');
+        message.style.display = 'block';
+        setTimeout(() => {
+            message.style.display = 'none';
+        }, 3000);
+    }
+    
+    function loadProgress() {
+        const saved = localStorage.getItem('ahcpcm303Progress');
+        if (saved) {
+            userProgress = JSON.parse(saved);
+            
+            // Restore completed sections
+            userProgress.completedSections.forEach(section => {
+                const element = document.getElementById(section);
+                if (element) {
+                    element.classList.add('section-complete');
+                }
+            });
+            
+            // Restore quiz answers
+            if (userProgress.quizAnswers) {
+                Object.keys(userProgress.quizAnswers).forEach(questionId => {
+                    // Textareas
+                    let input = document.querySelector(`textarea[data-question="${questionId}"]`);
+                    if (input) input.value = userProgress.quizAnswers[questionId];
+                    
+                    // Inputs
+                    input = document.querySelector(`input[data-question="${questionId}"]`);
+                    if (input) input.value = userProgress.quizAnswers[questionId];
+                    
+                    // Selects
+                    input = document.querySelector(`select[data-question="${questionId}"]`);
+                    if (input) input.value = userProgress.quizAnswers[questionId];
+                });
+            }
+            
+            // Restore current tab
+            if (userProgress.currentTab) {
+                switchTab(userProgress.currentTab);
+            }
+            
+            updateProgress();
+            alert('Progress loaded successfully!');
+        } else {
+            alert('No saved progress found.');
+        }
+    }
+    
+    // Search functionality
+    function setupSearch() {
+        const searchBox = document.getElementById('searchBox');
+        const searchResults = document.getElementById('searchResults');
+        
+        searchBox.addEventListener('input', function() {
+            const term = this.value.toLowerCase();
+            if (term.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+            
+            const results = [];
+            
+            // Search in species database
+            speciesDatabase.slice(0, 20).forEach(species => {
+                if (species.species.toLowerCase().includes(term)) {
+                    results.push({
+                        type: 'Species',
+                        text: species.species,
+                        tab: 'database'
+                    });
+                }
+            });
+            
+            // Search in TOC
+            document.querySelectorAll('.toc-list a').forEach(link => {
+                if (link.textContent.toLowerCase().includes(term)) {
+                    results.push({
+                        type: 'Section',
+                        text: link.textContent,
+                        tab: link.getAttribute('data-tab')
+                    });
+                }
+            });
+            
+            // Search in glossary terms
+            document.querySelectorAll('.glossary-term').forEach(termElement => {
+                const termText = termElement.getAttribute('data-term');
+                const termTitle = termElement.querySelector('h4')?.textContent || '';
+                if ((termText && termText.includes(term)) || termTitle.toLowerCase().includes(term)) {
+                    results.push({
+                        type: 'Glossary',
+                        text: termTitle,
+                        tab: 'glossary'
+                    });
+                }
+            });
+            
+            if (results.length > 0) {
+                searchResults.innerHTML = results.slice(0, 10).map(r => 
+                    `<div class="search-result-item" onclick="switchTab('${r.tab}')" role="option" tabindex="0">
+                        <small>${r.type}:</small> ${r.text}
+                    </div>
+                `).join('');
+                searchResults.style.display = 'block';
+            } else {
+                searchResults.innerHTML = '<div class="search-result-item">No results found</div>';
+                searchResults.style.display = 'block';
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!searchBox.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+    }
+    
+    // Glossary search function
+    function searchGlossary() {
+        const searchTerm = document.getElementById('glossarySearch').value.toLowerCase();
+        const terms = document.querySelectorAll('.glossary-term');
+        
+        if (searchTerm.length < 2) {
+            terms.forEach(term => {
+                term.style.display = 'block';
+            });
+            // Show all letter groups
+            document.querySelectorAll('.glossary-letter-group').forEach(group => {
+                group.style.display = 'block';
+            });
+            return;
+        }
+        
+        terms.forEach(term => {
+            const termText = term.getAttribute('data-term') || '';
+            const termTitle = term.querySelector('h4')?.textContent || '';
+            const termDefinition = term.querySelector('p')?.textContent || '';
+            
+            if (termText.includes(searchTerm) || 
+                termTitle.toLowerCase().includes(searchTerm) || 
+                termDefinition.toLowerCase().includes(searchTerm)) {
+                term.style.display = 'block';
+            } else {
+                term.style.display = 'none';
+            }
+        });
+        
+        // Hide empty letter groups
+        document.querySelectorAll('.glossary-letter-group').forEach(group => {
+            const visibleTerms = group.querySelectorAll('.glossary-term[style="display: block;"]').length;
+            
+            if (visibleTerms === 0) {
+                group.style.display = 'none';
+            } else {
+                group.style.display = 'block';
+            }
+        });
+    }
+    
+    // Initialize everything when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM loaded, initializing...");
+        
+        // Tab navigation for existing sections
+        const nextToSection1 = document.getElementById('nextToSection1');
+        const prevToWelcome = document.getElementById('prevToWelcome');
+        const nextToSection2 = document.getElementById('nextToSection2');
+        const prevToSection1 = document.getElementById('prevToSection1');
+        const nextToSection3 = document.getElementById('nextToSection3');
+        const prevToSection2 = document.getElementById('prevToSection2');
+        const nextToSection4 = document.getElementById('nextToSection4');
+        const prevToSection3 = document.getElementById('prevToSection3');
+        const nextToSection5 = document.getElementById('nextToSection5');
+        const prevToSection4 = document.getElementById('prevToSection4');
+        
+        if (nextToSection1) nextToSection1.addEventListener('click', () => switchTab('section1'));
+        if (prevToWelcome) prevToWelcome.addEventListener('click', () => switchTab('welcome'));
+        if (nextToSection2) nextToSection2.addEventListener('click', () => switchTab('section2'));
+        if (prevToSection1) prevToSection1.addEventListener('click', () => switchTab('section1'));
+        if (nextToSection3) nextToSection3.addEventListener('click', () => switchTab('section3'));
+        if (prevToSection2) prevToSection2.addEventListener('click', () => switchTab('section2'));
+        if (nextToSection4) nextToSection4.addEventListener('click', () => switchTab('section4'));
+        if (prevToSection3) prevToSection3.addEventListener('click', () => switchTab('section3'));
+        if (nextToSection5) nextToSection5.addEventListener('click', () => switchTab('section5'));
+        if (prevToSection4) prevToSection4.addEventListener('click', () => switchTab('section4'));
+        
+        // Tab navigation for new sections
+        const nextToSection6 = document.getElementById('nextToSection6');
+        const prevToSection5 = document.getElementById('prevToSection5');
+        const nextToSection7 = document.getElementById('nextToSection7');
+        const prevToSection6 = document.getElementById('prevToSection6');
+        const nextToSection8 = document.getElementById('nextToSection8');
+        const prevToSection7 = document.getElementById('prevToSection7');
+        const nextToSection9 = document.getElementById('nextToSection9');
+        const prevToSection8 = document.getElementById('prevToSection8');
+        const nextToSection10 = document.getElementById('nextToSection10');
+        const prevToSection9 = document.getElementById('prevToSection9');
+        const nextToDatabase = document.getElementById('nextToDatabase');
+        const prevFromDatabase = document.getElementById('prevFromDatabase');
+        const nextToAppendices = document.getElementById('nextToAppendices');
+        const prevFromAppendices = document.getElementById('prevFromAppendices');
+        const nextToGlossary = document.getElementById('nextToGlossary');
+        
+        if (nextToSection6) nextToSection6.addEventListener('click', () => switchTab('section6'));
+        if (prevToSection5) prevToSection5.addEventListener('click', () => switchTab('section5'));
+        if (nextToSection7) nextToSection7.addEventListener('click', () => switchTab('section7'));
+        if (prevToSection6) prevToSection6.addEventListener('click', () => switchTab('section6'));
+        if (nextToSection8) nextToSection8.addEventListener('click', () => switchTab('section8'));
+        if (prevToSection7) prevToSection7.addEventListener('click', () => switchTab('section7'));
+        if (nextToSection9) nextToSection9.addEventListener('click', () => switchTab('section9'));
+        if (prevToSection8) prevToSection8.addEventListener('click', () => switchTab('section8'));
+        if (nextToSection10) nextToSection10.addEventListener('click', () => switchTab('section10'));
+        if (prevToSection9) prevToSection9.addEventListener('click', () => switchTab('section9'));
+        if (nextToDatabase) nextToDatabase.addEventListener('click', () => switchTab('database'));
+        if (prevFromDatabase) prevFromDatabase.addEventListener('click', () => switchTab('section10'));
+        if (nextToAppendices) nextToAppendices.addEventListener('click', () => switchTab('appendices'));
+        if (prevFromAppendices) prevFromAppendices.addEventListener('click', () => switchTab('database'));
+        if (nextToGlossary) nextToGlossary.addEventListener('click', () => switchTab('glossary'));
+        
+        // Quiz buttons
+        const checkQuiz1 = document.getElementById('checkQuiz1');
+        const showAnswersQuiz1 = document.getElementById('showAnswersQuiz1');
+        
+        if (checkQuiz1) checkQuiz1.addEventListener('click', () => checkQuiz('quiz1'));
+        if (showAnswersQuiz1) showAnswersQuiz1.addEventListener('click', () => showAnswers('quiz1'));
+        
+        // TOC navigation
+        document.querySelectorAll('.toc-list a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabId = this.getAttribute('data-tab');
+                if (tabId) {
+                    switchTab(tabId);
+                }
+            });
+        });
+        
+        // Mobile sidebar toggle
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        
+        if (toggleSidebar) {
+            toggleSidebar.addEventListener('click', function() {
+                const isActive = document.getElementById('sidebar').classList.toggle('active');
+                mobileOverlay.classList.toggle('active');
+                this.setAttribute('aria-expanded', isActive);
+            });
+        }
+        
+        if (mobileOverlay) {
+            mobileOverlay.addEventListener('click', function() {
+                document.getElementById('sidebar').classList.remove('active');
+                this.classList.remove('active');
+                toggleSidebar.setAttribute('aria-expanded', 'false');
+            });
+        }
+        
+        // Save/Load buttons
+        const saveProgressBtn = document.getElementById('saveProgressBtn');
+        const loadProgressBtn = document.getElementById('loadProgressBtn');
+        
+        if (saveProgressBtn) saveProgressBtn.addEventListener('click', saveProgress);
+        if (loadProgressBtn) loadProgressBtn.addEventListener('click', loadProgress);
+        
+        // Render species database
+        renderSpeciesTable();
+        
+        // Create threatened species cards
+        const threatenedGrid = document.getElementById('threatenedGrid');
+        if (threatenedGrid) {
+            const threatenedSpecies = speciesDatabase.filter(s => 
+                s.conservation.includes('Endangered') || 
+                s.conservation.includes('Vulnerable') || 
+                s.conservation.includes('Rare') ||
+                s.conservation.includes('Critically')
+            ).slice(0, 30);
+            
+            threatenedGrid.innerHTML = '';
+            
+            threatenedSpecies.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'specimen-card';
+                card.setAttribute('role', 'button');
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('aria-label', `View details for ${s.species}`);
+                
+                // Store the species data in dataset attributes
+                card.dataset.species = s.species;
+                card.dataset.family = s.family;
+                card.dataset.habitat = s.habitat;
+                card.dataset.conservation = s.conservation;
+                card.dataset.morphology = s.morphology;
+                
+                const statusClass = s.conservation.toLowerCase().replace(/[()]/g, '').replace(/ /g, '-');
+                card.innerHTML = `
+                    <h4><em>${s.species}</em></h4>
+                    <div class="family">${s.family}</div>
+                    <p><strong>Habitat:</strong> ${s.habitat}</p>
+                    <p><span class="conservation ${statusClass}">${s.conservation}</span></p>
+                    <p><small>${s.morphology.substring(0, 60)}...</small></p>
+                `;
+                
+                // Add click handler
+                card.addEventListener('click', function(event) {
+                    // Prevent event from bubbling
+                    event.stopPropagation();
+                    
+                    // Remove any existing detail div from any card
+                    const existingDetails = threatenedGrid.querySelectorAll('.card-detail');
+                    existingDetails.forEach(detail => detail.remove());
+                    
+                    // Create and add new detail div to this card
+                    const detailDiv = document.createElement('div');
+                    detailDiv.className = 'card-detail';
+                    detailDiv.style.marginTop = '10px';
+                    detailDiv.style.padding = '10px';
+                    detailDiv.style.backgroundColor = '#f9f9f9';
+                    detailDiv.style.borderRadius = '4px';
+                    detailDiv.style.borderLeft = '3px solid var(--primary-color)';
+                    detailDiv.innerHTML = `
+                        <p><strong>Full Description:</strong> ${this.dataset.morphology}</p>
+                        <p><strong>Habitat Details:</strong> ${this.dataset.habitat}</p>
+                        <p><strong>Family:</strong> ${this.dataset.family}</p>
+                        <p><strong>Conservation Status:</strong> ${this.dataset.conservation}</p>
+                    `;
+                    this.appendChild(detailDiv);
+                });
+                
+                // Add keyboard support
+                card.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Remove any existing detail div from any card
+                        const existingDetails = threatenedGrid.querySelectorAll('.card-detail');
+                        existingDetails.forEach(detail => detail.remove());
+                        
+                        // Create and add new detail div
+                        const detailDiv = document.createElement('div');
+                        detailDiv.className = 'card-detail';
+                        detailDiv.style.marginTop = '10px';
+                        detailDiv.style.padding = '10px';
+                        detailDiv.style.backgroundColor = '#f9f9f9';
+                        detailDiv.style.borderRadius = '4px';
+                        detailDiv.style.borderLeft = '3px solid var(--primary-color)';
+                        detailDiv.innerHTML = `
+                            <p><strong>Full Description:</strong> ${this.dataset.morphology}</p>
+                            <p><strong>Habitat Details:</strong> ${this.dataset.habitat}</p>
+                            <p><strong>Family:</strong> ${this.dataset.family}</p>
+                            <p><strong>Conservation Status:</strong> ${this.dataset.conservation}</p>
+                        `;
+                        this.appendChild(detailDiv);
+                    }
+                });
+                
+                threatenedGrid.appendChild(card);
+            });
+        }
+        
+        // Setup search
+        setupSearch();
+    });
+</script>
