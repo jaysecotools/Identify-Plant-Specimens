@@ -1010,6 +1010,77 @@
         .printable-template { border: none; padding: 0; }
         body { background: white; }
     }
+
+	/* ---------- Video thumbnail images ---------- */
+.video-thumb-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+.video-thumb {
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+    background: #000;
+}
+.video-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    aspect-ratio: 16 / 9;
+    transition: transform 0.4s ease, filter 0.3s ease;
+}
+.video-card:hover .video-thumb img {
+    transform: scale(1.05);
+    filter: brightness(0.85);
+}
+.video-play-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    backdrop-filter: blur(3px);
+    transition: var(--transition);
+    pointer-events: none;
+}
+.video-play-badge i {
+    margin-left: 3px; /* optical centring of the play triangle */
+}
+.video-card:hover .video-play-badge {
+    background: var(--secondary-color);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* Keep placeholder tiles looking like placeholders (no image) */
+.video-placeholder .video-thumb {
+    background: #eef2f5;
+    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.video-placeholder .video-thumb i {
+    position: static;
+    background: rgba(255, 255, 255, 0.9);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8a9a9f;
+    font-size: 1.3rem;
+}
 </style>
 </head>
 <body>
@@ -4170,13 +4241,22 @@
 
     <!-- Video 1 -->
     <div class="video-card">
-        <div class="video-thumb">
-            <i class="fas fa-play-circle"></i>
-        </div>
+        <a href="https://www.youtube.com/watch?v=2mXkTLTQ5Zk"
+           target="_blank" rel="noopener noreferrer"
+           class="video-thumb-link"
+           aria-label="Watch: Plant Identification Fundamentals on YouTube">
+            <div class="video-thumb">
+                <img src="https://img.youtube.com/vi/2mXkTLTQ5Zk/hqdefault.jpg"
+                     alt="Video thumbnail: Plant Identification Fundamentals"
+                     loading="lazy">
+                <span class="video-play-badge"><i class="fas fa-play"></i></span>
+            </div>
+        </a>
         <div class="video-info">
             <h4>Plant Identification Fundamentals</h4>
             <p>An introduction to observing and identifying plant specimens using morphological features and basic keys.</p>
-            <a href="https://www.youtube.com/watch?v=2mXkTLTQ5Zk" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.youtube.com/watch?v=2mXkTLTQ5Zk"
+               target="_blank" rel="noopener noreferrer">
                 <i class="fas fa-external-link-alt"></i> Watch on YouTube
             </a>
         </div>
@@ -4184,13 +4264,22 @@
 
     <!-- Video 2 -->
     <div class="video-card">
-        <div class="video-thumb">
-            <i class="fas fa-play-circle"></i>
-        </div>
+        <a href="https://www.youtube.com/watch?v=LK4c1K1pIj4&t=20s"
+           target="_blank" rel="noopener noreferrer"
+           class="video-thumb-link"
+           aria-label="Watch: Tasmanian Flora and Field Techniques on YouTube">
+            <div class="video-thumb">
+                <img src="https://img.youtube.com/vi/LK4c1K1pIj4/hqdefault.jpg"
+                     alt="Video thumbnail: Tasmanian Flora and Field Techniques"
+                     loading="lazy">
+                <span class="video-play-badge"><i class="fas fa-play"></i></span>
+            </div>
+        </a>
         <div class="video-info">
             <h4>Tasmanian Flora &amp; Field Techniques</h4>
             <p>Field-based identification tips and specimen handling, contextualised for Tasmanian vegetation communities.</p>
-            <a href="https://www.youtube.com/watch?v=LK4c1K1pIj4&t=20s" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.youtube.com/watch?v=LK4c1K1pIj4&t=20s"
+               target="_blank" rel="noopener noreferrer">
                 <i class="fas fa-external-link-alt"></i> Watch on YouTube
             </a>
         </div>
