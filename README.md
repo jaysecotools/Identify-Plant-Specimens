@@ -1,5 +1,3 @@
-# README — AHCPCM303 Interactive Learning Resource (3D Edition)
-
 # AHCPCM303 — Identify Plant Specimens (Interactive Learning Resource)
 
 A self-contained HTML learning resource for the Australian vocational unit
