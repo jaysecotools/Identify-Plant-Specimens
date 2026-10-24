@@ -1,6 +1,9 @@
 <!-- 3D Interactive components integrated. Bugs and code structure errors resolved -->
 
 
+<!-- Update comments here -->
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1982,7 +1985,7 @@
                             <!-- Canvas injected by initLeafScene() -->
                         </div>
 
-                        <div class="scene-readout" id="leaf-readout">
+                        <div class="scene-readout" id="leaf-readout" aria-live="polite" aria-atomic="true">
                             <div class="readout-item">
                                 <span class="readout-label">Species</span>
                                 <span class="readout-value" id="leaf-readout-species">Richea pandanifolia</span>
@@ -2455,7 +2458,7 @@
                             <!-- Canvas injected by initForestScene() -->
                         </div>
 
-                        <div class="scene-readout" id="forest-readout">
+                        <div class="scene-readout" id="forest-readout" aria-live="polite" aria-atomic="true">
                             <div class="readout-item">
                                 <span class="readout-label">Canopy cover</span>
                                 <span class="readout-value" id="forest-readout-cover">100%</span>
@@ -3179,7 +3182,7 @@
                             <!-- Canvas injected by initPressScene() -->
                         </div>
 
-                        <div class="scene-readout" id="press-readout">
+                        <div class="scene-readout" id="press-readout" aria-live="polite" aria-atomic="true">
                             <div class="readout-item">
                                 <span class="readout-label">Features shown</span>
                                 <span class="readout-value" id="press-readout-features">0 / 4</span>
@@ -5414,10 +5417,8 @@
         }
 
         try {
-            // R3: spinner before wait
             wrap.innerHTML = '<div class="scene-spinner">Loading 3D model…</div>';
 
-            const container = document.getElementById('leaf-scene');
             const hintEl = document.getElementById('leaf-scene-hint');
             if (hintEl) {
                 setTimeout(() => { hintEl.style.display = 'none'; }, 5000);
@@ -5436,12 +5437,16 @@
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.setSize(width, height);
+            // Enable local clipping so the slice slider reveals a true cross-section
+            renderer.localClippingEnabled = true;
 
-            // R3: clear spinner just before appending canvas
             wrap.innerHTML = '';
             wrap.appendChild(renderer.domElement);
 
-            // Lights (restrained, diagrammatic)
+            // Clipping plane: passes through the leaf along Z when slider moves
+            const leafClipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 3.0);
+
+            // Lights
             const amb = new THREE.AmbientLight(0xffffff, 0.65);
             scene.add(amb);
             const dir = new THREE.DirectionalLight(0xffffff, 0.75);
@@ -5451,7 +5456,7 @@
             back.position.set(-5, 3, -6);
             scene.add(back);
 
-            // Orbit-style controls via pointer events (no external dependency)
+            // Orbit-style controls via pointer events
             let isDragging = false;
             let lastX = 0, lastY = 0;
             let rotY = 0.3, rotX = 0.2;
@@ -5497,22 +5502,19 @@
             scene.add(leafGroup);
 
             function buildLeafModel(variant) {
-                // Clear any existing children
                 while (leafGroup.children.length) {
                     const c = leafGroup.children.pop();
                     c.geometry && c.geometry.dispose();
                     c.material && (Array.isArray(c.material) ? c.material.forEach(m => m.dispose()) : c.material.dispose());
                 }
 
-                // Palette (muted greens)
                 const leafGreen = 0x4f8b52;
                 const leafGreenDark = 0x2f5f33;
                 const midribColor = 0x8fb894;
                 const hairColor = 0xd6e4d9;
+                const clip = [leafClipPlane];
 
                 if (variant === 'richea') {
-                    // Revolute leaf: long, narrow, margins rolled under
-                    // Central blade
                     const bladeShape = new THREE.Shape();
                     bladeShape.moveTo(-0.3, -3);
                     bladeShape.lineTo(0.3, -3);
@@ -5522,15 +5524,14 @@
                     const bladeGeom = new THREE.ExtrudeGeometry(bladeShape, {
                         depth: 0.06, bevelEnabled: false
                     });
-                    const bladeMat = new THREE.MeshStandardMaterial({ color: leafGreen, roughness: 0.85, side: THREE.DoubleSide });
+                    const bladeMat = new THREE.MeshStandardMaterial({ color: leafGreen, roughness: 0.85, side: THREE.DoubleSide, clippingPlanes: clip });
                     const blade = new THREE.Mesh(bladeGeom, bladeMat);
                     blade.rotation.x = -Math.PI / 2;
                     blade.position.y = 0;
                     leafGroup.add(blade);
 
-                    // Revolute rolled margins (small cylinders along both edges)
                     const rollGeom = new THREE.CylinderGeometry(0.22, 0.22, 6, 8, 1, true);
-                    const rollMat = new THREE.MeshStandardMaterial({ color: leafGreenDark, roughness: 0.9, side: THREE.DoubleSide });
+                    const rollMat = new THREE.MeshStandardMaterial({ color: leafGreenDark, roughness: 0.9, side: THREE.DoubleSide, clippingPlanes: clip });
                     const rollL = new THREE.Mesh(rollGeom, rollMat);
                     rollL.rotation.z = Math.PI / 2;
                     rollL.position.set(-0.32, -0.15, 0);
@@ -5540,34 +5541,30 @@
                     rollR.position.set(0.32, -0.15, 0);
                     leafGroup.add(rollR);
 
-                    // Midrib
                     const midribGeom = new THREE.BoxGeometry(0.05, 0.05, 6);
-                    const midribMat = new THREE.MeshStandardMaterial({ color: midribColor });
+                    const midribMat = new THREE.MeshStandardMaterial({ color: midribColor, clippingPlanes: clip });
                     const midrib = new THREE.Mesh(midribGeom, midribMat);
                     midrib.position.set(0, 0.05, 0);
                     leafGroup.add(midrib);
                 } else if (variant === 'bedfordia') {
-                    // Ovate, tomentose (hairy) leaf — wider blade with fuzzy surface
                     const shape = new THREE.Shape();
                     shape.moveTo(0, -3);
                     shape.bezierCurveTo(1.2, -2.5, 1.6, -0.5, 0.9, 2.2);
                     shape.bezierCurveTo(0.5, 3, -0.5, 3, -0.9, 2.2);
                     shape.bezierCurveTo(-1.6, -0.5, -1.2, -2.5, 0, -3);
                     const geom = new THREE.ShapeGeometry(shape, 24);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0x6a9a6d, roughness: 1, side: THREE.DoubleSide });
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x6a9a6d, roughness: 1, side: THREE.DoubleSide, clippingPlanes: clip });
                     const blade = new THREE.Mesh(geom, mat);
                     blade.rotation.x = -Math.PI / 2;
                     leafGroup.add(blade);
 
-                    // Hairs: tiny cones on the surface (a "tomentose" cue)
                     const hairGeom = new THREE.ConeGeometry(0.03, 0.15, 4);
-                    const hairMat = new THREE.MeshStandardMaterial({ color: hairColor, roughness: 1 });
+                    const hairMat = new THREE.MeshStandardMaterial({ color: hairColor, roughness: 1, clippingPlanes: clip });
                     for (let i = 0; i < 80; i++) {
                         const angle = Math.random() * Math.PI * 2;
                         const r = Math.random() * 1.1;
                         const x = Math.cos(angle) * r;
                         const z = Math.sin(angle) * r * 2.4;
-                        // Only on the blade area
                         if (Math.abs(x) > 0.15 || Math.abs(z) > 0.3) {
                             const hair = new THREE.Mesh(hairGeom, hairMat);
                             hair.position.set(x, 0.08, z);
@@ -5575,28 +5572,25 @@
                             leafGroup.add(hair);
                         }
                     }
-                    // Midrib
                     const midribGeom = new THREE.BoxGeometry(0.05, 0.05, 5.8);
-                    const midribMat = new THREE.MeshStandardMaterial({ color: midribColor });
+                    const midribMat = new THREE.MeshStandardMaterial({ color: midribColor, clippingPlanes: clip });
                     const midrib = new THREE.Mesh(midribGeom, midribMat);
                     midrib.position.set(0, 0.05, 0);
                     leafGroup.add(midrib);
                 } else {
-                    // Eucalyptus: falcate (sickle), glabrous, thick
                     const shape = new THREE.Shape();
                     shape.moveTo(0, -3);
                     shape.bezierCurveTo(0.6, -2, 0.9, 0.5, 0.3, 3);
                     shape.bezierCurveTo(-0.1, 3.1, -0.4, 3, -0.5, 2.4);
                     shape.bezierCurveTo(-0.7, 0.3, -0.5, -2, 0, -3);
                     const geom = new THREE.ShapeGeometry(shape, 24);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0x3d7a45, roughness: 0.55, metalness: 0.05, side: THREE.DoubleSide });
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x3d7a45, roughness: 0.55, metalness: 0.05, side: THREE.DoubleSide, clippingPlanes: clip });
                     const blade = new THREE.Mesh(geom, mat);
                     blade.rotation.x = -Math.PI / 2;
                     leafGroup.add(blade);
 
-                    // Flat midrib
                     const midribGeom = new THREE.BoxGeometry(0.04, 0.02, 6);
-                    const midribMat = new THREE.MeshStandardMaterial({ color: midribColor });
+                    const midribMat = new THREE.MeshStandardMaterial({ color: midribColor, clippingPlanes: clip });
                     const midrib = new THREE.Mesh(midribGeom, midribMat);
                     midrib.position.set(0, 0.03, 0);
                     midrib.rotation.z = 0.05;
@@ -5606,17 +5600,15 @@
 
             buildLeafModel('richea');
 
-            // Slice indicator (a thin red plane that sweeps along z)
+            // Visual slice indicator plane (sweeps along z with slider)
             const sliceGeom = new THREE.PlaneGeometry(4, 0.6);
-            const sliceMat = new THREE.MeshBasicMaterial({ color: 0xd97d0d, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+            const sliceMat = new THREE.MeshBasicMaterial({ color: 0xd97d0d, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
             const slicePlane = new THREE.Mesh(sliceGeom, sliceMat);
             slicePlane.rotation.y = Math.PI / 2;
             slicePlane.position.set(0, 0.1, -3);
             scene.add(slicePlane);
 
-            // =====================================================
-            // READOUT UPDATES
-            // =====================================================
+            // Readout updates
             function setReadouts(variant, slicePercent) {
                 const speciesNames = {
                     richea: 'Richea pandanifolia',
@@ -5628,16 +5620,8 @@
                     bedfordia: 'Thick (hairy)',
                     eucalyptus: 'Thin'
                 };
-                const waterMap = {
-                    richea: 32,
-                    bedfordia: 40,
-                    eucalyptus: 80
-                };
-                const waterLabels = {
-                    richea: 'Low',
-                    bedfordia: 'Moderate',
-                    eucalyptus: 'High'
-                };
+                const waterMap = { richea: 32, bedfordia: 40, eucalyptus: 80 };
+                const waterLabels = { richea: 'Low', bedfordia: 'Moderate', eucalyptus: 'High' };
 
                 const speciesEl = document.getElementById('leaf-readout-species');
                 const boundaryEl = document.getElementById('leaf-readout-boundary');
@@ -5647,7 +5631,6 @@
                 if (speciesEl) speciesEl.textContent = speciesNames[variant];
                 if (boundaryEl) boundaryEl.textContent = boundaryLabels[variant];
 
-                // When slice is visible on Richea, show the folded pocket in readout
                 let waterPct = waterMap[variant];
                 if (variant === 'richea' && slicePercent > 60) waterPct = 18;
 
@@ -5659,17 +5642,13 @@
                 if (waterEl) waterEl.textContent = waterLabels[variant];
             }
 
-            // Store state for the interaction handlers
             leafSceneRef = {
-                scene, camera, renderer, leafGroup, slicePlane,
+                scene, camera, renderer, leafGroup, slicePlane, leafClipPlane,
                 buildLeafModel, setReadouts,
                 variant: 'richea',
                 slicePercent: 0
             };
 
-            // =====================================================
-            // RENDER LOOP
-            // =====================================================
             let animationFrameId;
             function animate() {
                 animationFrameId = requestAnimationFrame(animate);
@@ -5677,7 +5656,6 @@
             }
             animate();
 
-            // Resize
             const resizeObserver = new ResizeObserver(() => {
                 const w = wrap.clientWidth || 800;
                 const h = wrap.clientHeight || 460;
@@ -5689,7 +5667,6 @@
             });
             resizeObserver.observe(wrap);
 
-            // Slider binding
             const slider = document.getElementById('leaf-slice-slider');
             const sliderVal = document.getElementById('leaf-slice-value');
             if (slider) {
@@ -5698,8 +5675,11 @@
                     if (sliderVal) sliderVal.textContent = pct + '%';
                     if (leafSceneRef) {
                         leafSceneRef.slicePercent = pct;
-                        // Map 0-100 to z from -3 to +3
-                        leafSceneRef.slicePlane.position.z = -3 + (pct / 100) * 6;
+                        const zPos = -3 + (pct / 100) * 6;
+                        leafSceneRef.slicePlane.position.z = zPos;
+                        // Move the real clip plane: at pct=0 nothing clipped (constant=+3),
+                        // at pct=100 fully clipped (constant=-3)
+                        leafSceneRef.leafClipPlane.constant = 3 - (pct / 100) * 6;
                         leafSceneRef.setReadouts(leafSceneRef.variant, pct);
                     }
                 });
@@ -5767,7 +5747,6 @@
             wrap.innerHTML = '';
             wrap.appendChild(renderer.domElement);
 
-            // Lights
             const amb = new THREE.AmbientLight(0xffffff, 0.7);
             scene.add(amb);
             const sun = new THREE.DirectionalLight(0xffffff, 0.9);
@@ -5776,7 +5755,6 @@
             const sky = new THREE.HemisphereLight(0xd0e4d6, 0x3a2a10, 0.4);
             scene.add(sky);
 
-            // Ground
             const groundGeom = new THREE.PlaneGeometry(40, 40);
             const groundMat = new THREE.MeshStandardMaterial({ color: 0x6b5a3e, roughness: 1 });
             const ground = new THREE.Mesh(groundGeom, groundMat);
@@ -5784,7 +5762,6 @@
             ground.position.y = 0;
             scene.add(ground);
 
-            // Moss / ground cover
             const mossGeom = new THREE.CircleGeometry(18, 32);
             const mossMat = new THREE.MeshStandardMaterial({ color: 0x4a6b3a, roughness: 1 });
             const moss = new THREE.Mesh(mossGeom, mossMat);
@@ -5792,26 +5769,17 @@
             moss.position.y = 0.02;
             scene.add(moss);
 
-            // =====================================================
-            // STRATA — 4 layers
-            // =====================================================
             const forestGroup = new THREE.Group();
             scene.add(forestGroup);
-
-            // Canopy tree (Eucalyptus regnans) — a tall trunk + crown
-            const canopyGroup = new THREE.Group();
-            forestGroup.add(canopyGroup);
 
             function makeCanopyTree(x, z) {
                 const g = new THREE.Group();
                 g.userData.isCanopy = true;
-                // Trunk
                 const trunkGeom = new THREE.CylinderGeometry(0.6, 0.9, 14, 8);
                 const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8a6a4a, roughness: 0.9 });
                 const trunk = new THREE.Mesh(trunkGeom, trunkMat);
                 trunk.position.y = 7;
                 g.add(trunk);
-                // Crown: 3 stacked cones (stylised eucalypt)
                 const crownMat = new THREE.MeshStandardMaterial({ color: 0x3a6b47, roughness: 1 });
                 for (let i = 0; i < 3; i++) {
                     const crownGeom = new THREE.ConeGeometry(2.8 - i * 0.4, 5 - i * 0.5, 8);
@@ -5823,7 +5791,6 @@
                 return g;
             }
 
-            // Understorey tree (Nothofagus) — shorter, rounded
             function makeUnderstoreyTree(x, z) {
                 const g = new THREE.Group();
                 g.userData.isCanopy = false;
@@ -5841,7 +5808,6 @@
                 return g;
             }
 
-            // Shrub (Bedfordia) — low, bushy
             function makeShrub(x, z) {
                 const g = new THREE.Group();
                 g.userData.isCanopy = false;
@@ -5855,7 +5821,6 @@
                 return g;
             }
 
-            // Fern (Polystichum) — low fan of flat leaves
             function makeFern(x, z) {
                 const g = new THREE.Group();
                 g.userData.isCanopy = false;
@@ -5872,7 +5837,6 @@
                 return g;
             }
 
-            // Populate the forest
             const canopyTrees = [];
             canopyTrees.push(makeCanopyTree(-6, -4));
             canopyTrees.push(makeCanopyTree(4, -6));
@@ -5902,7 +5866,6 @@
                 forestGroup.add(f);
             }
 
-            // Camera controls
             let isDragging = false;
             let lastX = 0, lastY = 0;
             let rotY = -0.6, rotX = 0.5;
@@ -5918,13 +5881,34 @@
             }
             updateCamera();
 
+            let pointerMoved = false;
+            let pointerDownPos = { x: 0, y: 0 };
+
             wrap.addEventListener('pointerdown', (e) => {
                 isDragging = true; lastX = e.clientX; lastY = e.clientY;
+                pointerMoved = false;
+                pointerDownPos = { x: e.clientX, y: e.clientY };
                 wrap.setPointerCapture(e.pointerId);
             });
             wrap.addEventListener('pointerup', (e) => {
                 isDragging = false;
                 try { wrap.releasePointerCapture(e.pointerId); } catch (_) {}
+                const moved = Math.abs(e.clientX - pointerDownPos.x) + Math.abs(e.clientY - pointerDownPos.y);
+                if (moved < 6) {
+                    const rect = wrap.getBoundingClientRect();
+                    const mouse = new THREE.Vector2(
+                        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                        -((e.clientY - rect.top) / rect.height) * 2 + 1
+                    );
+                    const raycaster = new THREE.Raycaster();
+                    raycaster.setFromCamera(mouse, camera);
+                    const hits = raycaster.intersectObjects(canopyTrees, true);
+                    if (hits.length > 0) {
+                        let obj = hits[0].object;
+                        while (obj && !canopyTrees.includes(obj)) obj = obj.parent;
+                        if (obj) forestFellSpecificTree(obj);
+                    }
+                }
             });
             wrap.addEventListener('pointermove', (e) => {
                 if (!isDragging) return;
@@ -5941,14 +5925,10 @@
                 updateCamera();
             }, { passive: false });
 
-            // =====================================================
-            // SCENE STATE
-            // =====================================================
             const state = {
                 canopyCover: 100,
                 years: 0,
-                felled: [],
-                shrubsGrown: 0
+                felled: []
             };
 
             function updateReadouts() {
@@ -5957,8 +5937,6 @@
                 const lightEl = document.getElementById('forest-readout-light');
                 const gapEl = document.getElementById('forest-readout-gap');
 
-                // Floor light: roughly 8% when fully closed, up to ~85% when one canopy falls,
-                // dropping again as understorey grows back
                 const baseLight = 8 + (100 - state.canopyCover) * 0.5;
                 const regrowthDiscount = Math.min(50, state.years * 0.5);
                 const floorLight = Math.max(8, Math.min(90, baseLight - regrowthDiscount));
@@ -5978,7 +5956,6 @@
                 }
             }
 
-            // Expose to global handlers
             forestSceneRef = {
                 scene, camera, renderer, forestGroup,
                 canopyTrees, understoreyShrubs, ferns,
@@ -6004,19 +5981,17 @@
             });
             resizeObserver.observe(wrap);
 
-            // Time slider
             const timeSlider = document.getElementById('forest-time-slider');
             const timeVal = document.getElementById('forest-time-value');
             if (timeSlider) {
                 timeSlider.addEventListener('input', (e) => {
                     state.years = parseInt(e.target.value, 10);
                     if (timeVal) timeVal.textContent = state.years + ' yr';
-                    // Grow shrubs/ferns back as years advance
-                    understoreyShrubs.forEach((s, i) => {
+                    understoreyShrubs.forEach((s) => {
                         const targetScale = Math.min(1, 0.3 + state.years / 40);
                         s.scale.setScalar(targetScale);
                     });
-                    ferns.forEach((f, i) => {
+                    ferns.forEach((f) => {
                         const targetScale = Math.min(1, 0.4 + state.years / 50);
                         f.scale.setScalar(targetScale);
                     });
@@ -6039,21 +6014,24 @@
     // Global interaction handlers for forest scene
     function forestFellCanopy() {
         if (!forestSceneRef) return;
-        const ref = forestSceneRef;
-        const remaining = ref.canopyTrees.filter(t => t.visible);
+        const remaining = forestSceneRef.canopyTrees.filter(t => t.visible);
         if (remaining.length === 0) return;
-        const target = remaining[0];
-        target.visible = false;
+        forestFellSpecificTree(remaining[0]);
+    }
+
+    function forestFellSpecificTree(target) {
+        if (!forestSceneRef || !target || !target.visible) return;
+        const ref = forestSceneRef;
         ref.state.canopyCover = Math.max(0, ref.state.canopyCover - 25);
         ref.state.felled.push(target);
 
-        // Simple fall animation: tilt and drop
         let angle = 0;
         const fallInterval = setInterval(() => {
             angle += 0.15;
             target.rotation.z = angle;
-            if (angle > Math.PI / 2) {
+            if (angle >= Math.PI / 2) {
                 clearInterval(fallInterval);
+                target.visible = false;
             }
         }, 30);
 
@@ -6070,15 +6048,14 @@
         ref.state.felled = [];
         ref.state.canopyCover = 100;
         ref.state.years = 0;
-        ref.understoreyShrubs.forEach(s => s.scale.setScalar(0.3));
-        ref.ferns.forEach(f => f.scale.setScalar(0.4));
+        ref.understoreyShrubs.forEach(s => s.scale.setScalar(1));
+        ref.ferns.forEach(f => f.scale.setScalar(1));
         const ts = document.getElementById('forest-time-slider');
         const tv = document.getElementById('forest-time-value');
         if (ts) ts.value = 0;
         if (tv) tv.textContent = '0 yr';
         ref.updateReadouts();
     }
-
 
     // ============================================================
     // 3D SCENE 3: HERBARIUM PRESSING SIMULATOR (Section 8 extension)
@@ -6117,14 +6094,12 @@
             wrap.innerHTML = '';
             wrap.appendChild(renderer.domElement);
 
-            // Lights
             const amb = new THREE.AmbientLight(0xffffff, 0.75);
             scene.add(amb);
             const dir = new THREE.DirectionalLight(0xffffff, 0.7);
             dir.position.set(3, 8, 5);
             scene.add(dir);
 
-            // Camera controls (orbit around origin)
             let isDragging = false;
             let lastX = 0, lastY = 0;
             let rotY = 0, rotX = 0.9;
@@ -6140,13 +6115,32 @@
             }
             updateCamera();
 
+            let pointerMoved = false;
+            let pointerDownPos = { x: 0, y: 0 };
+
             wrap.addEventListener('pointerdown', (e) => {
                 isDragging = true; lastX = e.clientX; lastY = e.clientY;
+                pointerMoved = false;
+                pointerDownPos = { x: e.clientX, y: e.clientY };
                 wrap.setPointerCapture(e.pointerId);
             });
             wrap.addEventListener('pointerup', (e) => {
                 isDragging = false;
                 try { wrap.releasePointerCapture(e.pointerId); } catch (_) {}
+                const moved = Math.abs(e.clientX - pointerDownPos.x) + Math.abs(e.clientY - pointerDownPos.y);
+                if (moved < 6 && pressSceneRef) {
+                    const rect = wrap.getBoundingClientRect();
+                    const mouse = new THREE.Vector2(
+                        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                        -((e.clientY - rect.top) / rect.height) * 2 + 1
+                    );
+                    const raycaster = new THREE.Raycaster();
+                    raycaster.setFromCamera(mouse, pressSceneRef.camera);
+                    const hits = raycaster.intersectObjects(pressSceneRef.leaflets, false);
+                    if (hits.length > 0) {
+                        pressFlipSpecificLeaf(hits[0].object);
+                    }
+                }
             });
             wrap.addEventListener('pointermove', (e) => {
                 if (!isDragging) return;
@@ -6163,9 +6157,7 @@
                 updateCamera();
             }, { passive: false });
 
-            // =====================================================
-            // PRESS SHEET
-            // =====================================================
+            // Press sheet
             const sheetW = 6;
             const sheetH = 8;
             const sheetGeom = new THREE.PlaneGeometry(sheetW, sheetH);
@@ -6175,7 +6167,6 @@
             sheet.position.y = 0;
             scene.add(sheet);
 
-            // Sheet border line
             const borderGeom = new THREE.EdgesGeometry(sheetGeom);
             const borderMat = new THREE.LineBasicMaterial({ color: 0xb0a080 });
             const border = new THREE.LineSegments(borderGeom, borderMat);
@@ -6183,52 +6174,39 @@
             border.position.y = 0.01;
             scene.add(border);
 
-            // =====================================================
-            // FERN FROND — a low-poly frond composed of pinnate leaves
-            // =====================================================
+            // Frond
             const frondGroup = new THREE.Group();
             scene.add(frondGroup);
 
-            // Stem (rachis)
             const stemGeom = new THREE.BoxGeometry(0.08, 0.02, 5.5);
             const stemMat = new THREE.MeshStandardMaterial({ color: 0x6a8a3a, roughness: 1 });
             const stem = new THREE.Mesh(stemGeom, stemMat);
             stem.position.set(0, 0.05, 0);
             frondGroup.add(stem);
 
-            // Individual leaflets
             const leafletMat = new THREE.MeshStandardMaterial({ color: 0x4a8a3a, roughness: 1, side: THREE.DoubleSide });
-            const leafletMatFlipped = new THREE.MeshStandardMaterial({ color: 0x8ab87a, roughness: 1, side: THREE.DoubleSide });
             const leafletGeom = new THREE.PlaneGeometry(0.6, 0.35);
 
             const leaflets = [];
-            const leafletState = {};
 
-            // Build 5 leaflets down each side
             for (let i = 0; i < 5; i++) {
                 const z = -2.4 + i * 1.2;
-                // Left
                 const leftLeaflet = new THREE.Mesh(leafletGeom, leafletMat.clone());
                 leftLeaflet.position.set(-0.4, 0.06, z);
                 leftLeaflet.rotation.x = -Math.PI / 2;
                 leftLeaflet.rotation.z = 0.15;
-                leftLeaflet.userData = { flipped: false, side: 'left', index: i };
+                leftLeaflet.userData = { flipped: false, side: 'left', index: i, origZ: z };
                 frondGroup.add(leftLeaflet);
                 leaflets.push(leftLeaflet);
-                // Right
+
                 const rightLeaflet = new THREE.Mesh(leafletGeom, leafletMat.clone());
                 rightLeaflet.position.set(0.4, 0.06, z);
                 rightLeaflet.rotation.x = -Math.PI / 2;
                 rightLeaflet.rotation.z = -0.15;
-                rightLeaflet.userData = { flipped: false, side: 'right', index: i };
+                rightLeaflet.userData = { flipped: false, side: 'right', index: i, origZ: z };
                 frondGroup.add(rightLeaflet);
                 leaflets.push(rightLeaflet);
             }
-
-            // Fold top/bottom halves (rotate group around x-axis)
-            const topHalf = new THREE.Group();
-            const bottomHalf = new THREE.Group();
-            // Simpler: expose fold flags on scene state
 
             const state = {
                 featuresShown: 0,
@@ -6244,8 +6222,6 @@
                 const fitEl = document.getElementById('press-readout-fit');
                 const mouldEl = document.getElementById('press-readout-mould');
 
-                // Feature count: flipped pairs count as features shown
-                // We consider 4 target features: 2 leaves flipped (both surfaces visible) + fold correctness
                 const flippedCount = leaflets.filter(l => l.userData.flipped).length;
                 let features = 0;
                 if (flippedCount >= 2) features += 1;
@@ -6254,12 +6230,8 @@
                 if (state.foldTop || state.foldBottom) features += 1;
                 state.featuresShown = Math.min(4, features);
 
-                // Fit: if total z-extent fits within sheet height 8, we're fine
-                // Frond spans z from -2.75 to +2.75 (5.5), fits in 8
-                // Folding reduces effective extent, so it's fine
                 state.fitsOnSheet = true;
 
-                // Mould risk: if leaves overlap heavily without fold, higher risk
                 let mould = 'Low';
                 if (flippedCount < 2 && !state.foldTop && !state.foldBottom) mould = 'High';
                 else if (flippedCount < 2 && (state.foldTop || state.foldBottom)) mould = 'Medium';
@@ -6310,16 +6282,22 @@
     // Global interaction handlers for press scene
     function pressFlipLeaf() {
         if (!pressSceneRef) return;
-        const ref = pressSceneRef;
-        const unflipped = ref.leaflets.filter(l => !l.userData.flipped);
+        const unflipped = pressSceneRef.leaflets.filter(l => !l.userData.flipped);
         if (unflipped.length === 0) return;
-        const leaf = unflipped[0];
-        leaf.userData.flipped = true;
-        // Toggle material to indicate flipped (shows "underside" colour)
-        leaf.material.color.setHex(0x8ab87a);
-        // Rotate to suggest flipping
-        leaf.rotation.x = -Math.PI / 2 + Math.PI * 0.9;
-        ref.updateReadouts();
+        pressFlipSpecificLeaf(unflipped[0]);
+    }
+
+    function pressFlipSpecificLeaf(leaf) {
+        if (!pressSceneRef || !leaf) return;
+        leaf.userData.flipped = !leaf.userData.flipped;
+        if (leaf.userData.flipped) {
+            leaf.material.color.setHex(0x8ab87a);
+            leaf.rotation.x = -Math.PI / 2 + Math.PI * 0.9;
+        } else {
+            leaf.material.color.setHex(0x4a8a3a);
+            leaf.rotation.x = -Math.PI / 2;
+        }
+        pressSceneRef.updateReadouts();
     }
 
     function pressToggleFold(which) {
@@ -6327,17 +6305,24 @@
         const ref = pressSceneRef;
         if (which === 'top') {
             ref.state.foldTop = !ref.state.foldTop;
-            // Rotate the top half of leaflets (those with z < 0) up by 90°
             ref.leaflets.forEach(l => {
                 if (l.position.z < 0) {
-                    l.position.y = ref.state.foldTop ? 0.4 : 0.06;
+                    l.rotation.y = ref.state.foldTop ? Math.PI : 0;
+                    l.position.y = ref.state.foldTop ? 0.18 : 0.06;
+                    l.position.z = ref.state.foldTop
+                        ? -Math.abs(l.userData.origZ) + 0.5
+                        : l.userData.origZ;
                 }
             });
         } else {
             ref.state.foldBottom = !ref.state.foldBottom;
             ref.leaflets.forEach(l => {
                 if (l.position.z > 0) {
-                    l.position.y = ref.state.foldBottom ? 0.4 : 0.06;
+                    l.rotation.y = ref.state.foldBottom ? Math.PI : 0;
+                    l.position.y = ref.state.foldBottom ? 0.18 : 0.06;
+                    l.position.z = ref.state.foldBottom
+                        ? Math.abs(l.userData.origZ) - 0.5
+                        : l.userData.origZ;
                 }
             });
         }
@@ -6347,11 +6332,7 @@
     function pressDoPress() {
         if (!pressSceneRef) return;
         const ref = pressSceneRef;
-        // Visual feedback: squish the leaflets down
-        ref.leaflets.forEach(l => {
-            l.scale.y = 0.4;
-        });
-        // Readout message
+        ref.leaflets.forEach(l => { l.scale.y = 0.4; });
         const featuresEl = document.getElementById('press-readout-features');
         if (ref.state.featuresShown >= 3 && ref.state.mouldRisk === 'Low') {
             if (featuresEl) featuresEl.textContent = '✓ Perfect specimen!';
@@ -6369,7 +6350,9 @@
         ref.leaflets.forEach(l => {
             l.userData.flipped = false;
             l.rotation.x = -Math.PI / 2;
+            l.rotation.y = 0;
             l.position.y = 0.06;
+            l.position.z = l.userData.origZ;
             l.scale.y = 1;
             l.material.color.setHex(0x4a8a3a);
         });
@@ -6378,7 +6361,6 @@
         ref.state.pressed = false;
         ref.updateReadouts();
     }
-
 
     // ============================================================
     // SECTION 2/3/5/6/7/8/10 QUIZ HELPERS
