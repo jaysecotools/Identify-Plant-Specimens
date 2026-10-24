@@ -1,4 +1,4 @@
-<!-- 3D Interactive components integrated -->
+<!-- Updated Script section to ensure check answers works with Practice Exams in Section 9. -->
 
 
 <!DOCTYPE html>
@@ -1658,16 +1658,8 @@
                         <div class="activity-title"><i class="fas fa-puzzle-piece"></i> Interactive Matching Game: Match 20 Species to Their Families</div>
                         <div class="quiz-container" role="region" aria-label="Species-family matching game">
                             <p>Click on the family that matches each species:</p>
-                            
-<div class="quiz-actions">
-    <button class="quiz-action-button" onclick="checkExam(1)" aria-label="Check Exam 1 answers">Check Exam 1</button>
-    <button class="quiz-action-button" onclick="showExamAnswers(1)" aria-label="Show Exam 1 answers">Show Answers</button>
-    <button class="quiz-action-button" onclick="clearExamAnswers(1)" style="background-color: #9e9e9e;" aria-label="Clear Exam 1 answers">
-        <i class="fas fa-eraser" aria-hidden="true"></i> Clear Answers
-    </button>
-</div>
-                            
-                            <div class="question-container" id="q1-2">
+                                                        
+                            <div class="question-container" id="match-q1-2">
                                 <div class="question-number">Species 2: <em>Nothofagus cunninghamii</em></div>
                                 <div class="quiz-actions" style="justify-content: flex-start;">
                                     <button class="quiz-action-button" onclick="checkFamilyMatch('Nothofagus cunninghamii', 'Myrtaceae')" aria-label="Select Myrtaceae for Nothofagus cunninghamii">Myrtaceae</button>
@@ -1677,7 +1669,7 @@
                                 <div id="match-feedback-2" class="answer-feedback" role="alert" aria-live="polite"></div>
                             </div>
                             
-                            <div class="question-container" id="q1-3">
+                            <div class="question-container" id="match-q1-3">
                                 <div class="question-number">Species 3: <em>Telopea truncata</em></div>
                                 <div class="quiz-actions" style="justify-content: flex-start;">
                                     <button class="quiz-action-button" onclick="checkFamilyMatch('Telopea truncata', 'Proteaceae')" aria-label="Select Proteaceae for Telopea truncata">Proteaceae</button>
@@ -1687,7 +1679,7 @@
                                 <div id="match-feedback-3" class="answer-feedback" role="alert" aria-live="polite"></div>
                             </div>
                             
-                            <div class="question-container" id="q1-4">
+                            <div class="question-container" id="match-q1-4">
                                 <div class="question-number">Species 4: <em>Richea pandanifolia</em></div>
                                 <div class="quiz-actions" style="justify-content: flex-start;">
                                     <button class="quiz-action-button" onclick="checkFamilyMatch('Richea pandanifolia', 'Ericaceae')" aria-label="Select Ericaceae for Richea pandanifolia">Ericaceae</button>
@@ -1697,7 +1689,7 @@
                                 <div id="match-feedback-4" class="answer-feedback" role="alert" aria-live="polite"></div>
                             </div>
                             
-                            <div class="question-container" id="q1-5">
+                            <div class="question-container" id="match-q1-5">
                                 <div class="question-number">Species 5: <em>Lagarostrobos franklinii</em></div>
                                 <div class="quiz-actions" style="justify-content: flex-start;">
                                     <button class="quiz-action-button" onclick="checkFamilyMatch('Lagarostrobos franklinii', 'Podocarpaceae')" aria-label="Select Podocarpaceae for Lagarostrobos franklinii">Podocarpaceae</button>
@@ -1709,7 +1701,7 @@
                         </div>
                     </div>
                     
-                    <div class="quiz-container" role="region" aria-label="Section 1 self-assessment quiz">
+                     <div class="quiz-container" role="region" aria-label="Section 1 self-assessment quiz">
                         <div class="quiz-title"><i class="fas fa-question-circle"></i> Section 1 Self-Assessment Quiz</div>
                         
                         <div class="question-container" id="q1-1">
@@ -1717,7 +1709,7 @@
                             <div class="question-text">List the eight main levels of the taxonomic hierarchy from broadest to most specific.</div>
                             <div class="answer">
                                 <label for="quiz1-1" class="sr-only">Your answer for question 1</label>
-                                <textarea id="quiz1-1" rows="3" style="width: 100%;" data-question="1" aria-describedby="feedback-quiz1-1"></textarea>
+                                <textarea id="quiz1-1" rows="3" style="width: 100%;" data-question="s1-1" aria-describedby="feedback-quiz1-1"></textarea>
                             </div>
                             <div class="answer-feedback" id="feedback-quiz1-1" role="alert" aria-live="polite"></div>
                         </div>
@@ -1727,7 +1719,7 @@
                             <div class="question-text">What are the two parts of a binomial name and how should they be formatted when typed and when handwritten?</div>
                             <div class="answer">
                                 <label for="quiz1-2" class="sr-only">Your answer for question 2</label>
-                                <textarea id="quiz1-2" rows="3" style="width: 100%;" data-question="2" aria-describedby="feedback-quiz1-2"></textarea>
+                                <textarea id="quiz1-2" rows="3" style="width: 100%;" data-question="s1-2" aria-describedby="feedback-quiz1-2"></textarea>
                             </div>
                             <div class="answer-feedback" id="feedback-quiz1-2" role="alert" aria-live="polite"></div>
                         </div>
@@ -1737,7 +1729,7 @@
                             <div class="question-text">Name three plant divisions present in Tasmania and provide one example species for each.</div>
                             <div class="answer">
                                 <label for="quiz1-3" class="sr-only">Your answer for question 3</label>
-                                <textarea id="quiz1-3" rows="3" style="width: 100%;" data-question="3" aria-describedby="feedback-quiz1-3"></textarea>
+                                <textarea id="quiz1-3" rows="3" style="width: 100%;" data-question="s1-3" aria-describedby="feedback-quiz1-3"></textarea>
                             </div>
                             <div class="answer-feedback" id="feedback-quiz1-3" role="alert" aria-live="polite"></div>
                         </div>
@@ -1916,7 +1908,7 @@
                         <button class="nav-button" onclick="resetKey()" style="margin-top: 1rem;" aria-label="Reset the identification key">Reset Key</button>
                     </div>
                     
-                    <h3>Self-Assessment: 20 Leaf Identification Questions</h3>
+                    <h3>Self-Assessment: 3 Leaf Identification Questions</h3>
                     <div class="quiz-container" role="region" aria-label="Leaf morphology quiz">
                         <div class="question-container" id="leaf-q1">
                             <div class="question-number">Question 1</div>
@@ -2029,9 +2021,9 @@
                         <div class="scene-hint" id="leaf-scene-hint"><i class="fas fa-hand-pointer"></i> Drag to rotate · scroll to zoom</div>
                     </div>
 
-                    <div class="scene-callout">
-                        <strong>The key insight:</strong> Scrub the slice slider to 100% and look at the cross-section. <em>Richea pandanifolia</em>'s margin curls right back under itself — that pocket of still air traps moisture and shields the stomata. <em>Eucalyptus globulus</em> has none of that protection because it doesn't need it (it grows in lower, wetter country). Now swap to <em>Bedfordia salicina</em> and notice the dense white hairs — those are another way to build a boundary layer. Same principle, different solution.
-                    </div>
+<div class="scene-callout">
+    <strong>The key insight:</strong> <em>(the part most students miss first time)</em> — Scrub the slice slider to 100% and look at the cross-section. <em>Richea pandanifolia</em>'s margin curls right back under itself — that pocket of still air traps moisture and shields the stomata. <em>Eucalyptus globulus</em> has none of that protection because it doesn't need it (it grows in lower, wetter country). Now swap to <em>Bedfordia salicina</em> and notice the dense white hairs — those are another way to build a boundary layer. Same principle, different solution.
+</div>
 
                     <div class="scene-placement-help">
                         <i class="fas fa-info-circle"></i> This scene reinforces <strong>Section 2, Element 2</strong>: observing and interpreting leaf morphological features in their ecological context.
@@ -2134,41 +2126,40 @@
                         </table>
                     </div>
                     
-                    <h3>Tasmanian Species Examples by Flower Type</h3>
                     <div class="activity-box">
-                        <div class="activity-title"><i class="fas fa-flower"></i> Tasmanian Wildflowers Gallery</div>
+                        <div class="activity-title"><i class="fas fa-flower"></i> Six Tasmanian Flowers — Structure &amp; Fruit Reference</div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
-                            <div class="specimen-card" role="button" tabindex="0" aria-label="Telopea truncata - Tasmanian waratah with red flowers">
+                            <div class="specimen-card">
                                 <h4><em>Telopea truncata</em></h4>
                                 <div class="family">Proteaceae</div>
                                 <p><strong>Flower:</strong> Red, zygomorphic, in dense clusters</p>
                                 <p><strong>Fruit:</strong> Woody follicle</p>
                             </div>
-                            <div class="specimen-card" role="button" tabindex="0" aria-label="Epacris impressa - Common heath with pink tubular flowers">
+                            <div class="specimen-card">
                                 <h4><em>Epacris impressa</em></h4>
                                 <div class="family">Ericaceae</div>
                                 <p><strong>Flower:</strong> Pink tubular, actinomorphic</p>
                                 <p><strong>Fruit:</strong> Capsule</p>
                             </div>
-                            <div class="specimen-card" role="button" tabindex="0" aria-label="Blandfordia punicea - Tasmanian Christmas bell with red bell-shaped flowers">
+                            <div class="specimen-card">
                                 <h4><em>Blandfordia punicea</em></h4>
                                 <div class="family">Blandfordiaceae</div>
                                 <p><strong>Flower:</strong> Red bell-shaped, pendulous</p>
                                 <p><strong>Fruit:</strong> Capsule</p>
                             </div>
-                            <div class="specimen-card" role="button" tabindex="0" aria-label="Richea scoparia - Honey bush with red flowers in spikes">
+                            <div class="specimen-card">
                                 <h4><em>Richea scoparia</em></h4>
                                 <div class="family">Ericaceae</div>
                                 <p><strong>Flower:</strong> Red, in dense spikes</p>
                                 <p><strong>Fruit:</strong> Capsule</p>
                             </div>
-                            <div class="specimen-card" role="button" tabindex="0" aria-label="Pultenaea juniperina - Prickly beauty with yellow-red pea-like flowers">
+                            <div class="specimen-card">
                                 <h4><em>Pultenaea juniperina</em></h4>
                                 <div class="family">Fabaceae</div>
                                 <p><strong>Flower:</strong> Yellow-red, pea-like, zygomorphic</p>
                                 <p><strong>Fruit:</strong> Legume</p>
                             </div>
-                            <div class="specimen-card" role="button" tabindex="0" aria-label="Bedfordia salicina - Tasmanian blanket leaf with yellow flowers in heads">
+                            <div class="specimen-card">
                                 <h4><em>Bedfordia salicina</em></h4>
                                 <div class="family">Asteraceae</div>
                                 <p><strong>Flower:</strong> Yellow, in heads (capitula)</p>
@@ -2357,32 +2348,32 @@
                     <p>Tasmania has one of the world's best collections of ancient conifers, many with Gondwanan origins.</p>
                     
                     <div class="specimen-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
-                        <div class="specimen-card" role="button" tabindex="0" aria-label="Athrotaxis selaginoides - King Billy Pine, vulnerable">
+                        <div class="specimen-card">
                             <h4><em>Athrotaxis selaginoides</em></h4>
                             <div class="conservation vulnerable">Vulnerable</div>
                             <p><strong>King Billy Pine</strong> - Large tree with scale-like leaves. Cones take 2 years to mature.</p>
                         </div>
-                        <div class="specimen-card" role="button" tabindex="0" aria-label="Athrotaxis cupressoides - Pencil Pine, vulnerable">
+                        <div class="specimen-card">
                             <h4><em>Athrotaxis cupressoides</em></h4>
                             <div class="conservation vulnerable">Vulnerable</div>
                             <p><strong>Pencil Pine</strong> - Dense, pencil-like form. Small cones with thin scales.</p>
                         </div>
-                        <div class="specimen-card" role="button" tabindex="0" aria-label="Lagarostrobos franklinii - Huon Pine, not listed">
+                        <div class="specimen-card">
                             <h4><em>Lagarostrobos franklinii</em></h4>
                             <div class="conservation not-listed">Not Listed</div>
                             <p><strong>Huon Pine</strong> - Extremely long-lived, aromatic wood. Seeds with fleshy aril.</p>
                         </div>
-                        <div class="specimen-card" role="button" tabindex="0" aria-label="Phyllocladus aspleniifolius - Celery-top Pine, not listed">
+                        <div class="specimen-card">
                             <h4><em>Phyllocladus aspleniifolius</em></h4>
                             <div class="conservation not-listed">Not Listed</div>
                             <p><strong>Celery-top Pine</strong> - Unique cladodes resemble celery leaves. Bright red aril.</p>
                         </div>
-                        <div class="specimen-card" role="button" tabindex="0" aria-label="Microcachrys tetragona - Creeping Pine, not listed">
+                        <div class="specimen-card">
                             <h4><em>Microcachrys tetragona</em></h4>
                             <div class="conservation not-listed">Not Listed</div>
                             <p><strong>Creeping Pine</strong> - Prostrate alpine shrub. Bright red cones resemble berries.</p>
                         </div>
-                        <div class="specimen-card" role="button" tabindex="0" aria-label="Diselma archeri - Dwarf Pine, not listed">
+                        <div class="specimen-card">
                             <h4><em>Diselma archeri</em></h4>
                             <div class="conservation not-listed">Not Listed</div>
                             <p><strong>Dwarf Pine</strong> - Tiny scale leaves, small woody cones. Alpine areas.</p>
@@ -2496,9 +2487,9 @@
                         <div class="scene-hint" id="forest-scene-hint"><i class="fas fa-hand-pointer"></i> Drag to rotate · click trees</div>
                     </div>
 
-                    <div class="scene-callout">
-                        <strong>The key insight:</strong> Scrub time forward and watch what happens. For the first ~5 years, the floor is bright, and fast-growing shrubs and ferns (<em>Bedfordia</em>, <em>Polystichum</em>) explode into the gap. By year ~40 they've been overtopped by <em>Nothofagus</em> and <em>Eucalyptus</em> saplings. By year 100 the canopy is closed again and the floor is dark. <strong>A single windthrow event sets off a century-long race.</strong> This is why "old-growth" isn't just about age — it's about the disturbance history.
-                    </div>
+<div class="scene-callout">
+    <strong>Common misconception:</strong> <em>(most students assume the opposite — here's why)</em> — Scrub time forward and watch what happens. For the first ~5 years, the floor is bright, and fast-growing shrubs and ferns (<em>Bedfordia</em>, <em>Polystichum</em>) explode into the gap. By year ~40 they've been overtopped by <em>Nothofagus</em> and <em>Eucalyptus</em> saplings. By year 100 the canopy is closed again and the floor is dark. <strong>A single windthrow event sets off a century-long race.</strong> This is why "old-growth" isn't just about age — it's about the disturbance history.
+</div>
 
                     <div class="scene-placement-help">
                         <i class="fas fa-info-circle"></i> Reinforces <strong>Section 5</strong> (reproductive structures in ecological context) and connects to <strong>Section 7</strong> (why threatened species often depend on specific disturbance regimes).
@@ -3214,9 +3205,9 @@
                         <div class="scene-hint" id="press-scene-hint"><i class="fas fa-hand-pointer"></i> Drag to rotate · click leaves to flip</div>
                     </div>
 
-                    <div class="scene-callout">
-                        <strong>The key insight:</strong> Flip enough leaves to show both surfaces, keep the frond folded to fit the sheet, and press — you'll see a perfect specimen. Forget one flip and the frond is one-sided. Cram it folded without folding properly and the press button warns you about mould. The physical act of arranging the specimen is the lesson: <strong>a herbarium sheet is a communication tool, not just storage.</strong>
-                    </div>
+<div class="scene-callout">
+    <strong>The key insight:</strong> <em>(the part most students miss first time)</em> — Flip enough leaves to show both surfaces, keep the frond folded to fit the sheet, and press — you'll see a perfect specimen. Forget one flip and the frond is one-sided. Cram it folded without folding properly and the press button warns you about mould. The physical act of arranging the specimen is the lesson: <strong>a herbarium sheet is a communication tool, not just storage.</strong>
+</div>
 
                     <div class="scene-placement-help">
                         <i class="fas fa-info-circle"></i> Reinforces <strong>Section 8, Element 4</strong> (documenting specimens correctly) and links back to Section 6 (identification relies on what's visible on the sheet).
@@ -3236,14 +3227,14 @@
                     
                     <h3>Practice Exam 1: Basic Plant Identification</h3>
                     <div class="quiz-container" role="region" aria-label="Practice Exam 1">
-                        <div class="quiz-title"><i class="fas fa-pencil-alt"></i> Exam 1: 20 Questions</div>
+                        <div class="quiz-title"><i class="fas fa-pencil-alt"></i> Exam 1: 5 Questions</div>
                         
                         <div class="question-container">
                             <div class="question-number">Question 1.1</div>
                             <div class="question-text">What is the correct binomial nomenclature format for the Tasmanian Blue Gum?</div>
                             <div class="answer">
                                 <label for="exam1-q1" class="sr-only">Select answer</label>
-                                <select id="exam1-q1" style="width: 100%; padding: 0.5rem;">
+                                <select id="exam1-q1" style="width: 100%; padding: 0.5rem;" data-question="exam1-q1">
                                     <option value="">Select answer...</option>
                                     <option value="a">Eucalyptus Globulus</option>
                                     <option value="b">Eucalyptus globulus</option>
@@ -3259,7 +3250,7 @@
                             <div class="question-text">Which of the following describes a leaf with a saw-toothed margin?</div>
                             <div class="answer">
                                 <label for="exam1-q2" class="sr-only">Select answer</label>
-                                <select id="exam1-q2" style="width: 100%; padding: 0.5rem;">
+                                <select id="exam1-q2" style="width: 100%; padding: 0.5rem;" data-question="exam1-q2">
                                     <option value="">Select answer...</option>
                                     <option value="a">Entire</option>
                                     <option value="b">Serrate</option>
@@ -3275,7 +3266,7 @@
                             <div class="question-text">To which family does Telopea truncata (Tasmanian Waratah) belong?</div>
                             <div class="answer">
                                 <label for="exam1-q3" class="sr-only">Select answer</label>
-                                <select id="exam1-q3" style="width: 100%; padding: 0.5rem;">
+                                <select id="exam1-q3" style="width: 100%; padding: 0.5rem;" data-question="exam1-q3">
                                     <option value="">Select answer...</option>
                                     <option value="a">Myrtaceae</option>
                                     <option value="b">Proteaceae</option>
@@ -3291,7 +3282,7 @@
                             <div class="question-text">What type of fruit does Eucalyptus globulus produce?</div>
                             <div class="answer">
                                 <label for="exam1-q4" class="sr-only">Select answer</label>
-                                <select id="exam1-q4" style="width: 100%; padding: 0.5rem;">
+                                <select id="exam1-q4" style="width: 100%; padding: 0.5rem;" data-question="exam1-q4">
                                     <option value="">Select answer...</option>
                                     <option value="a">Capsule</option>
                                     <option value="b">Berry</option>
@@ -3307,7 +3298,7 @@
                             <div class="question-text">Which Tasmanian conifer is known for its bright red, berry-like cones?</div>
                             <div class="answer">
                                 <label for="exam1-q5" class="sr-only">Select answer</label>
-                                <select id="exam1-q5" style="width: 100%; padding: 0.5rem;">
+                                <select id="exam1-q5" style="width: 100%; padding: 0.5rem;" data-question="exam1-q5">
                                     <option value="">Select answer...</option>
                                     <option value="a">Athrotaxis selaginoides</option>
                                     <option value="b">Lagarostrobos franklinii</option>
@@ -3331,14 +3322,14 @@
                     
                     <h3>Practice Exam 2: Advanced Identification</h3>
                     <div class="quiz-container" role="region" aria-label="Practice Exam 2">
-                        <div class="quiz-title"><i class="fas fa-pencil-alt"></i> Exam 2: 20 Questions</div>
+                        <div class="quiz-title"><i class="fas fa-pencil-alt"></i> Exam 2: 5 Questions</div>
                         
                         <div class="question-container">
                             <div class="question-number">Question 2.1</div>
                             <div class="question-text">Describe the key differences between simple and compound leaves, with Tasmanian examples of each.</div>
                             <div class="answer">
                                 <label for="exam2-q1" class="sr-only">Your answer</label>
-                                <textarea id="exam2-q1" rows="4" style="width: 100%;"></textarea>
+                                <textarea id="exam2-q1" rows="4" style="width: 100%;" data-question="exam2-q1"></textarea>
                             </div>
                             <div class="correct-answer" style="display: none;">Simple leaves have a single blade (e.g., Eucalyptus globulus). Compound leaves have multiple leaflets (e.g., Polystichum proliferum, Acacia dealbata).</div>
                         </div>
@@ -3348,7 +3339,7 @@
                             <div class="question-text">List three Tasmanian gymnosperms and their conservation status under the EPBC Act.</div>
                             <div class="answer">
                                 <label for="exam2-q2" class="sr-only">Your answer</label>
-                                <textarea id="exam2-q2" rows="4" style="width: 100%;"></textarea>
+                                <textarea id="exam2-q2" rows="4" style="width: 100%;" data-question="exam2-q2"></textarea>
                             </div>
                             <div class="correct-answer" style="display: none;">1. Athrotaxis selaginoides - Vulnerable, 2. Athrotaxis cupressoides - Vulnerable, 3. Athrotaxis laxifolia - Vulnerable</div>
                         </div>
@@ -3358,7 +3349,7 @@
                             <div class="question-text">What are phyllodes and which Tasmanian genus commonly exhibits them?</div>
                             <div class="answer">
                                 <label for="exam2-q3" class="sr-only">Your answer</label>
-                                <textarea id="exam2-q3" rows="3" style="width: 100%;"></textarea>
+                                <textarea id="exam2-q3" rows="3" style="width: 100%;" data-question="exam2-q3"></textarea>
                             </div>
                             <div class="correct-answer" style="display: none;">Phyllodes are flattened petioles that function as leaves. Acacia (e.g., Acacia melanoxylon) commonly exhibits phyllodes.</div>
                         </div>
@@ -3368,7 +3359,7 @@
                             <div class="question-text">Name four different bark types found in Tasmanian eucalypts and provide an example species for each.</div>
                             <div class="answer">
                                 <label for="exam2-q4" class="sr-only">Your answer</label>
-                                <textarea id="exam2-q4" rows="4" style="width: 100%;"></textarea>
+                                <textarea id="exam2-q4" rows="4" style="width: 100%;" data-question="exam2-q4"></textarea>
                             </div>
                             <div class="correct-answer" style="display: none;">1. Smooth - Eucalyptus globulus, 2. Stringy - Eucalyptus obliqua, 3. Fibrous - Eucalyptus amygdalina, 4. Ribbon - Eucalyptus delegatensis</div>
                         </div>
@@ -3378,32 +3369,32 @@
                             <div class="question-text">Describe the correct procedure for pressing a plant specimen for herbarium storage.</div>
                             <div class="answer">
                                 <label for="exam2-q5" class="sr-only">Your answer</label>
-                                <textarea id="exam2-q5" rows="4" style="width: 100%;"></textarea>
+                                <textarea id="exam2-q5" rows="4" style="width: 100%;" data-question="exam2-q5"></textarea>
                             </div>
                             <div class="correct-answer" style="display: none;">Arrange specimen to show key features, place between absorbent paper, add corrugated cardboard for air flow, apply even pressure in press, change blotting paper regularly until dry (1-3 weeks).</div>
                         </div>
                         
-                        <div class="quiz-actions">
-                            <button class="quiz-action-button" onclick="checkExam(2)" aria-label="Check Exam 2 answers">Check Exam 2</button>
-                            <button class="quiz-action-button" onclick="showExamAnswers(2)" aria-label="Show Exam 2 model answers">Show Model Answers</button>
-<button class="quiz-action-button" onclick="clearExamAnswers(2)" style="background-color: #9e9e9e;" aria-label="Clear Exam 1 answers">
-    <i class="fas fa-eraser" aria-hidden="true"></i> Clear Answers
-</button>
-                        </div>
+<div class="quiz-actions">
+    <button class="quiz-action-button" onclick="checkExam(2)" aria-label="Check Exam 2 answers">Check Exam 2</button>
+    <button class="quiz-action-button" onclick="showExamAnswers(2)" aria-label="Show Exam 2 answers">Show Answers</button>
+    <button class="quiz-action-button" onclick="clearExamAnswers(2)" style="background-color: #9e9e9e;" aria-label="Clear Exam 2 answers">
+        <i class="fas fa-eraser" aria-hidden="true"></i> Clear Answers
+    </button>
+</div>
                         
                         <div class="quiz-results" id="exam2-results" role="region" aria-label="Exam 2 results" aria-live="polite"></div>
                     </div>
                     
                     <h3>Practice Exam 3: Field Assessment</h3>
                     <div class="quiz-container" role="region" aria-label="Practice Exam 3">
-                        <div class="quiz-title"><i class="fas fa-pencil-alt"></i> Exam 3: 20 Questions</div>
+                        <div class="quiz-title"><i class="fas fa-pencil-alt"></i> Exam 3: 5 Questions</div>
                         
                         <div class="question-container">
                             <div class="question-number">Question 3.1</div>
                             <div class="question-text">You find an unknown plant in the Tasmanian wilderness with opposite, ovate leaves with serrate margins, growing in cool temperate rainforest. What species is it most likely to be?</div>
                             <div class="answer">
                                 <label for="exam3-q1" class="sr-only">Enter species name</label>
-                                <input id="exam3-q1" type="text" style="width: 100%; padding: 0.5rem;" placeholder="Enter species name">
+                                <input id="exam3-q1" type="text" style="width: 100%; padding: 0.5rem;" placeholder="Enter species name" data-question="exam3-q1">
                             </div>
                             <div class="correct-answer" style="display: none;">Nothofagus cunninghamii (Myrtle Beech)</div>
                         </div>
@@ -3413,7 +3404,7 @@
                             <div class="question-text">What equipment would you need to collect a proper herbarium specimen in the field? List at least 8 items.</div>
                             <div class="answer">
                                 <label for="exam3-q2" class="sr-only">Your answer</label>
-                                <textarea id="exam3-q2" rows="3" style="width: 100%;"></textarea>
+                                <textarea id="exam3-q2" rows="3" style="width: 100%;" data-question="exam3-q2"></textarea>
                             </div>
                             <div class="correct-answer" style="display: none;">Plant press, secateurs, trowel, hand lens, field notebook, GPS, paper bags, permanent marker, camera</div>
                         </div>
@@ -3433,7 +3424,7 @@
                             <div class="question-text">What are the main threats to King Billy Pine (Athrotaxis selaginoides)?</div>
                             <div class="answer">
                                 <label for="exam3-q4" class="sr-only">Your answer</label>
-                                <textarea id="exam3-q4" rows="3" style="width: 100%;"></textarea>
+                                <textarea id="exam3-q4" rows="3" style="width: 100%;" data-question="exam3-q4"></textarea>
                             </div>
                             <div class="correct-answer" style="display: none;">Wildfire, climate change, dieback disease</div>
                         </div>
@@ -3443,7 +3434,7 @@
                             <div class="question-text">Describe the difference between an indented key and a bracketed key. Which would you prefer for field use and why?</div>
                             <div class="answer">
                                 <label for="exam3-q5" class="sr-only">Your answer</label>
-                                <textarea id="exam3-q5" rows="4" style="width: 100%;"></textarea>
+                                <textarea id="exam3-q5" rows="4" style="width: 100%;" data-question="exam3-q5"></textarea>
                             </div>
                             <div class="correct-answer" style="display: none;">Indented keys show hierarchy visually through indentation; bracketed keys use numbered couplets with directions. Preference depends on context - bracketed keys are more compact for field guides, indented keys are easier to follow visually.</div>
                         </div>
@@ -3451,7 +3442,7 @@
                         <div class="quiz-actions">
                             <button class="quiz-action-button" onclick="checkExam(3)" aria-label="Check Exam 3 answers">Check Exam 3</button>
                             <button class="quiz-action-button" onclick="showExamAnswers(3)" aria-label="Show Exam 3 model answers">Show Model Answers</button>
-<button class="quiz-action-button" onclick="clearExamAnswers(3)" style="background-color: #9e9e9e;" aria-label="Clear Exam 1 answers">
+<button class="quiz-action-button" onclick="clearExamAnswers(3)" style="background-color: #9e9e9e;" aria-label="Clear Exam 3 answers">
     <i class="fas fa-eraser" aria-hidden="true"></i> Clear Answers
 </button>
                         </div>
@@ -3460,7 +3451,7 @@
                     </div>
                     
                     <h3>Field Assessment Checklists</h3>
-                    <div class="table-container" role="region" aria-label="Field assessment checklist" tabindex="0">
+                     <div class="table-container" role="region" aria-label="Field assessment checklist" tabindex="0">
                         <table>
                             <caption class="sr-only">Field assessment checklist for plant identification competencies</caption>
                             <thead>
@@ -3474,27 +3465,27 @@
                                 <tr>
                                     <td>Prepare for identification</td>
                                     <td>Selects appropriate equipment, obtains necessary permits, reviews relevant identification resources</td>
-                                    <td><input type="checkbox" aria-label="Achieved - prepare for identification"></td>
+                                    <td><input type="checkbox" aria-label="Achieved - prepare for identification" data-question="field-1"></td>
                                 </tr>
                                 <tr>
                                     <td>Observe plant features</td>
                                     <td>Accurately records leaf arrangement, shape, margin; flower structure; fruit type; bark characteristics; habitat</td>
-                                    <td><input type="checkbox" aria-label="Achieved - observe plant features"></td>
+                                    <td><input type="checkbox" aria-label="Achieved - observe plant features" data-question="field-2"></td>
                                 </tr>
                                 <tr>
                                     <td>Use identification keys</td>
                                     <td>Correctly navigates dichotomous keys, interprets botanical terminology, verifies identification with multiple resources</td>
-                                    <td><input type="checkbox" aria-label="Achieved - use identification keys"></td>
+                                    <td><input type="checkbox" aria-label="Achieved - use identification keys" data-question="field-3"></td>
                                 </tr>
                                 <tr>
                                     <td>Document findings</td>
                                     <td>Completes herbarium label, photographs specimen in habitat, records GPS coordinates, notes associated species</td>
-                                    <td><input type="checkbox" aria-label="Achieved - document findings"></td>
+                                    <td><input type="checkbox" aria-label="Achieved - document findings" data-question="field-4"></td>
                                 </tr>
                                 <tr>
                                     <td>Report outcomes</td>
                                     <td>Prepares accurate identification report, includes justification for identification, notes conservation status</td>
-                                    <td><input type="checkbox" aria-label="Achieved - report outcomes"></td>
+                                    <td><input type="checkbox" aria-label="Achieved - report outcomes" data-question="field-5"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -3585,23 +3576,23 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td rowspan="5"><strong>Pre-field</strong></td><td>Check weather forecast and plan accordingly</td><td><input type="checkbox" aria-label="Weather forecast checked"></td></tr>
-                                <tr><td>Obtain necessary permits/permissions</td><td><input type="checkbox" aria-label="Permits obtained"></td></tr>
-                                <tr><td>Prepare plant press and drying materials</td><td><input type="checkbox" aria-label="Plant press prepared"></td></tr>
-                                <tr><td>Charge GPS, camera, phone</td><td><input type="checkbox" aria-label="Devices charged"></td></tr>
-                                <tr><td>Pack field guides, hand lens, collection equipment</td><td><input type="checkbox" aria-label="Equipment packed"></td></tr>
+                                <tr><td rowspan="5"><strong>Pre-field</strong></td><td>Check weather forecast and plan accordingly</td><td><input type="checkbox" aria-label="Weather forecast checked" data-question="workplace-1"></td></tr>
+                                <tr><td>Obtain necessary permits/permissions</td><td><input type="checkbox" aria-label="Permits obtained" data-question="workplace-2"></td></tr>
+                                <tr><td>Prepare plant press and drying materials</td><td><input type="checkbox" aria-label="Plant press prepared" data-question="workplace-3"></td></tr>
+                                <tr><td>Charge GPS, camera, phone</td><td><input type="checkbox" aria-label="Devices charged" data-question="workplace-4"></td></tr>
+                                <tr><td>Pack field guides, hand lens, collection equipment</td><td><input type="checkbox" aria-label="Equipment packed" data-question="workplace-5"></td></tr>
                                 
-                                <tr><td rowspan="5"><strong>Field work</strong></td><td>Record site details before collecting</td><td><input type="checkbox" aria-label="Site details recorded"></td></tr>
-                                <tr><td>Photograph plant in habitat and close-ups</td><td><input type="checkbox" aria-label="Photos taken"></td></tr>
-                                <tr><td>Collect representative specimen (with permit)</td><td><input type="checkbox" aria-label="Specimen collected"></td></tr>
-                                <tr><td>Press specimen immediately or store in plastic bag</td><td><input type="checkbox" aria-label="Specimen pressed"></td></tr>
-                                <tr><td>Complete field notebook with all observations</td><td><input type="checkbox" aria-label="Notebook completed"></td></tr>
+                                <tr><td rowspan="5"><strong>Field work</strong></td><td>Record site details before collecting</td><td><input type="checkbox" aria-label="Site details recorded" data-question="workplace-6"></td></tr>
+                                <tr><td>Photograph plant in habitat and close-ups</td><td><input type="checkbox" aria-label="Photos taken" data-question="workplace-7"></td></tr>
+                                <tr><td>Collect representative specimen (with permit)</td><td><input type="checkbox" aria-label="Specimen collected" data-question="workplace-8"></td></tr>
+                                <tr><td>Press specimen immediately or store in plastic bag</td><td><input type="checkbox" aria-label="Specimen pressed" data-question="workplace-9"></td></tr>
+                                <tr><td>Complete field notebook with all observations</td><td><input type="checkbox" aria-label="Notebook completed" data-question="workplace-10"></td></tr>
                                 
-                                <tr><td rowspan="5"><strong>Post-field</strong></td><td>Change blotting paper in press</td><td><input type="checkbox" aria-label="Blotting paper changed"></td></tr>
-                                <tr><td>Process photographs and backup files</td><td><input type="checkbox" aria-label="Photos processed"></td></tr>
-                                <tr><td>Identify specimen using keys and resources</td><td><input type="checkbox" aria-label="Specimen identified"></td></tr>
-                                <tr><td>Complete herbarium label and report</td><td><input type="checkbox" aria-label="Report completed"></td></tr>
-                                <tr><td>Submit data to relevant databases</td><td><input type="checkbox" aria-label="Data submitted"></td></tr>
+                                <tr><td rowspan="5"><strong>Post-field</strong></td><td>Change blotting paper in press</td><td><input type="checkbox" aria-label="Blotting paper changed" data-question="workplace-11"></td></tr>
+                                <tr><td>Process photographs and backup files</td><td><input type="checkbox" aria-label="Photos processed" data-question="workplace-12"></td></tr>
+                                <tr><td>Identify specimen using keys and resources</td><td><input type="checkbox" aria-label="Specimen identified" data-question="workplace-13"></td></tr>
+                                <tr><td>Complete herbarium label and report</td><td><input type="checkbox" aria-label="Report completed" data-question="workplace-14"></td></tr>
+                                <tr><td>Submit data to relevant databases</td><td><input type="checkbox" aria-label="Data submitted" data-question="workplace-15"></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -5190,6 +5181,79 @@
         if (currentCard) currentCard.style.display = 'none';
         if (prevCard) prevCard.style.display = 'block';
     }
+
+    // ============================================================
+    // SECTION 1 QUIZ (text-answer version)
+    // ============================================================
+    function checkQuiz(quizId) {
+        if (quizId !== 'quiz1') return;
+        const q1 = document.querySelector('[data-question="s1-1"]');
+        const q2 = document.querySelector('[data-question="s1-2"]');
+        const q3 = document.querySelector('[data-question="s1-3"]');
+        const f1 = document.getElementById('feedback-quiz1-1');
+        const f2 = document.getElementById('feedback-quiz1-2');
+        const f3 = document.getElementById('feedback-quiz1-3');
+        let score = 0;
+
+        if (q1) {
+            const a = q1.value.toLowerCase();
+            const count = ['domain','kingdom','division','class','order','family','genus','species'].filter(k => a.includes(k)).length;
+            if (count >= 6) {
+                f1.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct!</div>';
+                f1.className = 'answer-feedback correct'; f1.style.display = 'flex'; score++;
+                const c = q1.closest('.question-container'); if (c) { c.classList.add('completed'); c.classList.remove('incorrect','partial'); }
+            } else {
+                f1.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Include all eight ranks: Domain, Kingdom, Division, Class, Order, Family, Genus, Species.</div>';
+                f1.className = 'answer-feedback partial'; f1.style.display = 'flex';
+                const c = q1.closest('.question-container'); if (c) { c.classList.add('partial'); c.classList.remove('completed','incorrect'); }
+            }
+        }
+
+        if (q2) {
+            const a = q2.value.toLowerCase();
+            if (a.includes('genus') && a.includes('species') && (a.includes('italic') || a.includes('underline'))) {
+                f2.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Correct!</div>';
+                f2.className = 'answer-feedback correct'; f2.style.display = 'flex'; score++;
+                const c = q2.closest('.question-container'); if (c) { c.classList.add('completed'); c.classList.remove('incorrect','partial'); }
+            } else {
+                f2.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Genus capitalised + species lowercase; italicised when typed, underlined when handwritten.</div>';
+                f2.className = 'answer-feedback partial'; f2.style.display = 'flex';
+                const c = q2.closest('.question-container'); if (c) { c.classList.add('partial'); c.classList.remove('completed','incorrect'); }
+            }
+        }
+
+        if (q3) {
+            const a = q3.value.toLowerCase();
+            const divisions = ['magnoliophyta','pinophyta','pteridophyta','lycopodiophyta','bryophyta'].filter(k => a.includes(k)).length;
+            if (divisions >= 2) {
+                f3.innerHTML = '<div class="answer-feedback correct"><i class="fas fa-check-circle"></i> ✓ Good answer!</div>';
+                f3.className = 'answer-feedback correct'; f3.style.display = 'flex'; score++;
+                const c = q3.closest('.question-container'); if (c) { c.classList.add('completed'); c.classList.remove('incorrect','partial'); }
+            } else {
+                f3.innerHTML = '<div class="answer-feedback partial"><i class="fas fa-exclamation-triangle"></i> ⚠ Name three divisions with a Tasmanian example each.</div>';
+                f3.className = 'answer-feedback partial'; f3.style.display = 'flex';
+                const c = q3.closest('.question-container'); if (c) { c.classList.add('partial'); c.classList.remove('completed','incorrect'); }
+            }
+        }
+
+        const resultsDiv = document.getElementById('quiz1-results');
+        if (resultsDiv) {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `<div class="quiz-score">You scored ${score} out of 3</div>`;
+        }
+        if (score === 3) markSectionComplete('section1');
+    }
+
+    function showAnswers(quizId) {
+        if (quizId !== 'quiz1') return;
+        const f1 = document.getElementById('feedback-quiz1-1');
+        const f2 = document.getElementById('feedback-quiz1-2');
+        const f3 = document.getElementById('feedback-quiz1-3');
+        if (f1) { f1.innerHTML = '<div class="answer-feedback correct"><strong>Model:</strong> Domain, Kingdom, Division, Class, Order, Family, Genus, Species</div>'; f1.className='answer-feedback correct'; f1.style.display = 'flex'; }
+        if (f2) { f2.innerHTML = '<div class="answer-feedback correct"><strong>Model:</strong> Genus + species epithet. Italicised when typed; underlined separately when handwritten.</div>'; f2.className='answer-feedback correct'; f2.style.display = 'flex'; }
+        if (f3) { f3.innerHTML = '<div class="answer-feedback correct"><strong>Model:</strong> Magnoliophyta (<em>Eucalyptus globulus</em>), Pinophyta (<em>Athrotaxis selaginoides</em>), Pteridophyta (<em>Dicksonia antarctica</em>).</div>'; f3.className='answer-feedback correct'; f3.style.display = 'flex'; }
+    }
+
 
     // ============================================================
     // SECTION 1: FAMILY MATCHING (fixed IDs — no more collisions)
