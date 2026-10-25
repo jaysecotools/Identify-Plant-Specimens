@@ -1,4 +1,7 @@
-<!--  Improved leaf cross section scale  --> 
+<!--  	Improved leaf cross section scale.
+	Improved herbarim specimen fold and added label to page.  --> 
+
+
 
 <!--
     AHCPCM303 — Identify Plant Specimens (Tasmania)
@@ -3207,8 +3210,7 @@
 
                         <div class="scene-toggles">
                             <button class="scene-toggle" onclick="pressFlipLeaf()"><i class="fas fa-retweet"></i> Flip next leaf</button>
-                            <button class="scene-toggle" onclick="pressToggleFold('top')"><i class="fas fa-compress-arrows-alt"></i> Fold top half</button>
-                            <button class="scene-toggle" onclick="pressToggleFold('bottom')"><i class="fas fa-compress-arrows-alt"></i> Fold bottom half</button>
+                            <button class="scene-toggle" onclick="pressToggleFold('top')"><i class="fas fa-compress-arrows-alt"></i> Bend top third</button>
                             <button class="scene-toggle" onclick="pressDoPress()"><i class="fas fa-book"></i> Press specimen</button>
                             <button class="scene-toggle" onclick="pressResetScene()"><i class="fas fa-redo"></i> Reset</button>
                         </div>
@@ -6611,37 +6613,145 @@
             border.position.y = 0.01;
             scene.add(border);
 
-            // Frond
+            // Herbarium label placeholder — a greyed box in the
+            // bottom-right corner of the sheet. Static; represents the
+            // printed label that every herbarium sheet carries. Sits
+            // just above the sheet (y = 0.02) and below the frond so
+            // the specimen can overlap it in extreme folds without
+            // z-fighting.
+            //
+            // Sheet local coords: sheet plane runs x ∈ [-sheetW/2, +sheetW/2],
+            // z ∈ [-sheetH/2, +sheetH/2]. Bottom-right is (+X, +Z).
+            const labelW = 2.0;
+            const labelH = 1.4;
+            // Margin from sheet edge (keeps it visibly inset, like a
+            // real glued-on label).
+            const labelMargin = 0.25;
+            const labelGeom = new THREE.PlaneGeometry(labelW, labelH);
+            const labelMat = new THREE.MeshStandardMaterial({
+                color: 0xcfcabb,       // warm neutral grey
+                roughness: 0.95,
+                metalness: 0,
+                side: THREE.DoubleSide
+            });
+            const label = new THREE.Mesh(labelGeom, labelMat);
+            label.rotation.x = -Math.PI / 2;
+            label.position.set(
+                sheetW / 2 - labelW / 2 - labelMargin,   // right side, inset
+                0.02,                                     // just above sheet
+                sheetH / 2 - labelH / 2 - labelMargin    // bottom, inset (+Z is "bottom" on the ground plane)
+            );
+            scene.add(label);
+
+            // Thin outline so the box reads as a distinct object even
+            // at low contrast (grey label on cream sheet).
+            const labelBorderGeom = new THREE.EdgesGeometry(labelGeom);
+            const labelBorderMat = new THREE.LineBasicMaterial({
+                color: 0x9a9484,
+                linewidth: 1
+            });
+            const labelBorder = new THREE.LineSegments(labelBorderGeom, labelBorderMat);
+            labelBorder.rotation.x = -Math.PI / 2;
+            labelBorder.position.copy(label.position);
+            labelBorder.position.y += 0.005;
+            scene.add(labelBorder);
+
+            // Frond — one continuous ribbon, bent at BEND_Z. Everything
+            // above the bend point is a child of bendPivotGroup, so
+            // rotating that pivot swings the upper section sideways in
+            // the plane of the sheet (bend, not fold). The lower section
+            // stays put.
             const frondGroup = new THREE.Group();
             scene.add(frondGroup);
 
-            const stemGeom = new THREE.BoxGeometry(0.08, 0.02, 5.5);
-            const stemMat = new THREE.MeshStandardMaterial({ color: 0x6a8a3a, roughness: 1 });
-            const stem = new THREE.Mesh(stemGeom, stemMat);
-            stem.position.set(0, 0.05, 0);
-            frondGroup.add(stem);
+            // Frond runs from base at z = +FROND_HALF to tip at z = -FROND_HALF.
+            const FROND_HALF = 2.75;
+            // Bend point: one third of the frond length down from the tip.
+            // Tip is at -FROND_HALF. One third of full length (2*FROND_HALF)
+            // = (2/3)*FROND_HALF. So bend z = -FROND_HALF + (2/3)*FROND_HALF
+            // = -(1/3)*FROND_HALF ≈ -0.917.
+            const BEND_Z = -FROND_HALF / 3;
+
+            // Lower section: base → bend point. Stationary.
+            const lowerSectionGroup = new THREE.Group();
+            lowerSectionGroup.position.set(0, 0, 0);
+            frondGroup.add(lowerSectionGroup);
+
+            // Bend pivot: positioned at the bend point. Rotating this
+            // group about Y swings the upper section sideways.
+            const bendPivotGroup = new THREE.Group();
+            bendPivotGroup.position.set(0, 0, BEND_Z);
+            frondGroup.add(bendPivotGroup);
+
+            // Upper section: child of bend pivot. Local z = 0 at the
+            // bend point, growing toward -Z (toward the tip).
+            const upperSectionGroup = new THREE.Group();
+            upperSectionGroup.position.set(0, 0, 0);
+            bendPivotGroup.add(upperSectionGroup);
 
             const leafletMat = new THREE.MeshStandardMaterial({ color: 0x4a8a3a, roughness: 1, side: THREE.DoubleSide });
             const leafletGeom = new THREE.PlaneGeometry(0.6, 0.35);
+            const stemMat = new THREE.MeshStandardMaterial({ color: 0x6a8a3a, roughness: 1 });
 
+            // Stem: two pieces meeting at the bend point.
+            // Lower stem runs from base (+FROND_HALF) down to bend (BEND_Z)
+            //   in frondGroup coords → local z from 0 (at BEND_Z) to
+            //   +(FROND_HALF + BEND_Z) measured from bend point... simpler:
+            // build in absolute frondGroup coords for the lower, and in
+            // bend-pivot local coords for the upper.
+            const lowerStemLength = FROND_HALF - Math.abs(BEND_Z);
+            const lowerStemGeom = new THREE.BoxGeometry(0.08, 0.02, lowerStemLength);
+            const lowerStem = new THREE.Mesh(lowerStemGeom, stemMat);
+            // Centre of the lower stem in frondGroup coords:
+            // midpoint between BEND_Z and +FROND_HALF.
+            lowerStem.position.set(0, 0.05, (BEND_Z + FROND_HALF) / 2);
+            lowerSectionGroup.add(lowerStem);
+
+            const upperStemLength = FROND_HALF + BEND_Z;
+            const upperStemGeom = new THREE.BoxGeometry(0.08, 0.02, upperStemLength);
+            const upperStem = new THREE.Mesh(upperStemGeom, stemMat);
+            // Centre of the upper stem in bendPivot local coords:
+            // midpoint between local z = 0 (bend) and local z = -upperStemLength (tip).
+            upperStem.position.set(0, 0.05, -upperStemLength / 2);
+            upperSectionGroup.add(upperStem);
+
+            // Leaflets. Each goes into the lower or upper section based on
+            // whether its global z is below or above the bend point.
+            // origZ keeps the global unfolded z for reset/flip.
+            // origLocalZ keeps the section-local z for reset positioning.
             const leaflets = [];
 
             for (let i = 0; i < 5; i++) {
-                const z = -2.4 + i * 1.2;
+                const zGlobal = -2.4 + i * 1.2;
+                const inUpper = zGlobal < BEND_Z;
+                const parentGroup = inUpper ? upperSectionGroup : lowerSectionGroup;
+                // Local z relative to the section's own origin.
+                const localZ = inUpper ? (zGlobal - BEND_Z) : zGlobal;
+
                 const leftLeaflet = new THREE.Mesh(leafletGeom, leafletMat.clone());
-                leftLeaflet.position.set(-0.4, 0.06, z);
+                leftLeaflet.position.set(-0.4, 0.06, localZ);
                 leftLeaflet.rotation.x = -Math.PI / 2;
                 leftLeaflet.rotation.z = 0.15;
-                leftLeaflet.userData = { flipped: false, side: 'left', index: i, origZ: z };
-                frondGroup.add(leftLeaflet);
+                leftLeaflet.userData = {
+                    flipped: false, side: 'left', index: i,
+                    origZ: zGlobal, origLocalZ: localZ,
+                    homeGroup: parentGroup,
+                    homeGroupName: inUpper ? 'upper' : 'lower'
+                };
+                parentGroup.add(leftLeaflet);
                 leaflets.push(leftLeaflet);
 
                 const rightLeaflet = new THREE.Mesh(leafletGeom, leafletMat.clone());
-                rightLeaflet.position.set(0.4, 0.06, z);
+                rightLeaflet.position.set(0.4, 0.06, localZ);
                 rightLeaflet.rotation.x = -Math.PI / 2;
                 rightLeaflet.rotation.z = -0.15;
-                rightLeaflet.userData = { flipped: false, side: 'right', index: i, origZ: z };
-                frondGroup.add(rightLeaflet);
+                rightLeaflet.userData = {
+                    flipped: false, side: 'right', index: i,
+                    origZ: zGlobal, origLocalZ: localZ,
+                    homeGroup: parentGroup,
+                    homeGroupName: inUpper ? 'upper' : 'lower'
+                };
+                parentGroup.add(rightLeaflet);
                 leaflets.push(rightLeaflet);
             }
 
@@ -6683,7 +6793,10 @@
             }
 
             pressSceneRef = {
-                scene, camera, renderer, frondGroup, leaflets, state, updateReadouts
+                scene, camera, renderer, frondGroup,
+                lowerSectionGroup, bendPivotGroup, upperSectionGroup,
+                BEND_Z, FROND_HALF,
+                leaflets, state, updateReadouts
             };
 
             let animationFrameId;
@@ -6737,33 +6850,52 @@
         pressSceneRef.updateReadouts();
     }
 
+    // Bend angle: 90°. The upper section swings from pointing -Z (up
+    // the sheet) to pointing +X (right, across the sheet) — a clean
+    // L-bend in the plane of the sheet, both arms flat and visible.
+    // Sign: rotation.y = -π/2 swings a -Z-pointing child to +X.
+    const BEND_ANGLE = -Math.PI / 2;
+
     function pressToggleFold(which) {
         if (!pressSceneRef) return;
         const ref = pressSceneRef;
-        if (which === 'top') {
-            ref.state.foldTop = !ref.state.foldTop;
-            ref.leaflets.forEach(l => {
-                if (l.position.z < 0) {
-                    l.rotation.y = ref.state.foldTop ? Math.PI : 0;
-                    l.position.y = ref.state.foldTop ? 0.18 : 0.06;
-                    l.position.z = ref.state.foldTop
-                        ? -Math.abs(l.userData.origZ) + 0.5
-                        : l.userData.origZ;
-                }
-            });
+
+        // 'which' is kept for API compatibility — the bend always
+        // affects the upper section. The 'bottom' option is a no-op
+        // because the lower section is stationary by design.
+        if (which !== 'top') return;
+
+        ref.state.foldTop = !ref.state.foldTop;
+
+        if (ref.state.foldTop) {
+            ref.bendPivotGroup.rotation.y = BEND_ANGLE;
         } else {
-            ref.state.foldBottom = !ref.state.foldBottom;
-            ref.leaflets.forEach(l => {
-                if (l.position.z > 0) {
-                    l.rotation.y = ref.state.foldBottom ? Math.PI : 0;
-                    l.position.y = ref.state.foldBottom ? 0.18 : 0.06;
-                    l.position.z = ref.state.foldBottom
-                        ? Math.abs(l.userData.origZ) - 0.5
-                        : l.userData.origZ;
-                }
-            });
+            ref.bendPivotGroup.rotation.y = 0;
         }
+
         ref.updateReadouts();
+    }
+
+    // Rebuild the stem as two halves so each can be folded independently
+    function rebuildStem(foldTop, foldBottom, lift) {
+        if (!pressSceneRef || !pressSceneRef.stemGroup) return;
+        const g = pressSceneRef.stemGroup;
+        while (g.children.length) {
+            const c = g.children.pop();
+            c.geometry && c.geometry.dispose();
+            c.material && c.material.dispose();
+        }
+        const stemMat = new THREE.MeshStandardMaterial({ color: 0x6a8a3a, roughness: 1 });
+        const makeHalf = (zCenter, zLen, folded) => {
+            const geom = new THREE.BoxGeometry(0.08, 0.02, zLen);
+            const m = new THREE.Mesh(geom, stemMat);
+            m.position.set(0, folded ? 0.05 + lift : 0.05, folded ? -zCenter : zCenter);
+            return m;
+        };
+        // Top half spans z from -2.75 to 0 (length 2.75, centre -1.375)
+        g.add(makeHalf(-1.375, 2.75, foldTop));
+        // Bottom half spans z from 0 to +2.75
+        g.add(makeHalf(1.375, 2.75, foldBottom));
     }
 
     function pressDoPress() {
@@ -6784,15 +6916,41 @@
     function pressResetScene() {
         if (!pressSceneRef) return;
         const ref = pressSceneRef;
+
+        // Reset the bend pivot — one number does the whole job now.
+        ref.bendPivotGroup.rotation.set(0, 0, 0);
+
+        // Belt-and-braces: zero out every group that ever gets rotated,
+        // so no stale transform survives an earlier interaction.
+        [ref.frondGroup, ref.lowerSectionGroup, ref.bendPivotGroup, ref.upperSectionGroup]
+            .forEach(g => {
+                if (!g) return;
+                g.rotation.set(0, 0, 0);
+                g.position.set(
+                    g === ref.bendPivotGroup ? 0 : g.position.x,
+                    0,
+                    g === ref.bendPivotGroup ? ref.BEND_Z : g.position.z
+                );
+                g.scale.set(1, 1, 1);
+            });
+
+        // Reset every leaflet to its original unfolded state.
         ref.leaflets.forEach(l => {
             l.userData.flipped = false;
-            l.rotation.x = -Math.PI / 2;
-            l.rotation.y = 0;
-            l.position.y = 0.06;
-            l.position.z = l.userData.origZ;
-            l.scale.y = 1;
+            l.rotation.set(
+                -Math.PI / 2,
+                0,
+                l.userData.side === 'left' ? 0.15 : -0.15
+            );
+            l.position.set(
+                l.userData.side === 'left' ? -0.4 : 0.4,
+                0.06,
+                l.userData.origLocalZ
+            );
+            l.scale.set(1, 1, 1);
             l.material.color.setHex(0x4a8a3a);
         });
+
         ref.state.foldTop = false;
         ref.state.foldBottom = false;
         ref.state.pressed = false;
