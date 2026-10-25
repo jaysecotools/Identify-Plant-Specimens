@@ -1,3 +1,5 @@
+<!--  Improved leaf cross section scale  --> 
+
 <!--
     AHCPCM303 — Identify Plant Specimens (Tasmania)
     Version: 2.3 (stable — 3D scenes verified working)
@@ -5593,6 +5595,30 @@
                     shape.bezierCurveTo(-0.2, -3.7, -0.1, -4, 0, -4);
                 }
 
+                // Sample the silhouette's half-width at 101 z-positions
+                // (z = -4 at base -> z = +4 at tip) so buildCrossSection()
+                // uses the SAME widths that are drawn on the left panel.
+                const samples = 100;
+                const halfWidths = new Float32Array(samples + 1);
+                const shapePts = shape.getPoints(200);
+                for (let i = 0; i <= samples; i++) {
+                    const zTarget = -4 + (i / samples) * 8;
+                    let maxAbsX = 0;
+                    for (let j = 0; j < shapePts.length; j++) {
+                        const p = shapePts[j];
+                        // shape is in XY with Y as the leaf's long axis;
+                        // sample against Y, keep max |x| at that Y.
+                        if (Math.abs(p.y - zTarget) < 0.25) {
+                            if (Math.abs(p.x) > maxAbsX) maxAbsX = Math.abs(p.x);
+                        }
+                    }
+                    halfWidths[i] = maxAbsX;
+                }
+                if (typeof window.__leafHalfWidths === 'undefined') {
+                    window.__leafHalfWidths = {};
+                }
+                window.__leafHalfWidths[variant] = halfWidths;
+
                 const geom = new THREE.ShapeGeometry(shape, 32);
                 // ShapeGeometry is in XY; rotate to lie on XZ (flat on ground)
                 const mesh = new THREE.Mesh(geom, leafColor);
@@ -5813,21 +5839,20 @@
             // section visibly widens / narrows as the slider moves —
             // mirroring what the left-hand silhouette is doing.
             // =========================================================
+            // Display scale: silhouette half-widths go up to ~1.6 for
+            // bedfordia; scale ×2 for full width, ×SECTION_SCALE for
+            // a comfortable on-screen section size.
+            const SECTION_SCALE = 2.2;
+
             function widthAt(variant, t) {
-                if (variant === 'richea') {
-                    // Silhouette: 0.45 → 0.55 → 0.45 (widest in middle)
-                    // Multiply by ~4.4 to reach the section's display scale
-                    const shape = 0.45 + 0.10 * Math.sin(t * Math.PI);
-                    return shape * 4.4;
-                } else if (variant === 'bedfordia') {
-                    // Silhouette: widest around t ≈ 0.35, narrower at ends
-                    // sin peaks at t = 0.5, so bias with a shift: widest ~0.35
-                    const peak = Math.exp(-Math.pow((t - 0.35) / 0.35, 2));
-                    return 1.2 + peak * 1.6;      // 1.2 at ends → 2.8 at peak
-                } else {
-                    // Eucalyptus: widest at base, tapers to tip
-                    return 2.8 - 1.4 * t;         // 2.8 at base → 1.4 at tip
+                const table = window.__leafHalfWidths && window.__leafHalfWidths[variant];
+                if (table && table.length) {
+                    const idx = Math.max(0, Math.min(table.length - 1,
+                        Math.round(t * (table.length - 1))));
+                    return Math.max(0.3, table[idx] * 2 * SECTION_SCALE);
                 }
+                // Fallback if the silhouette hasn't been sampled yet.
+                return 2.0;
             }
 
             // Build the cross-section for a given variant at a given pct
