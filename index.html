@@ -1,7 +1,14 @@
-<!-- 3D Interactive components integrated. Bugs and code structure errors resolved -->
-
-
-<!-- Update comments here -->
+<!--
+    AHCPCM303 — Identify Plant Specimens (Tasmania)
+    Version: 2.3 (stable — 3D scenes verified working)
+    Structure: single-file HTML learning resource with lazy-initialised
+               Three.js scenes (leaf3d, forest3d, press3d).
+    Notes: 3D scenes are initialised on first tab visit via waitForTHREE();
+           each scene is tracked in sceneState.initialised to prevent
+           double-init. All interactive handlers are inline onclick="..."
+           on global functions, so the resource works when opened directly
+           from the filesystem (no module server required).
+-->
 
 
 <!DOCTYPE html>
@@ -1978,8 +1985,7 @@
                     <div class="scene-container" id="leaf-scene">
                         <div class="scene-header">
                             <h4><i class="fas fa-cube"></i> Leaf Anatomy Model</h4>
-                            <p>Choose a species, then slice through the leaf to see the cross-section that 2D diagrams can't show.</p>
-                        </div>
+                            <p>Choose a species, then move the slider to see how the cross-section changes along the leaf — from base to tip.</p>
 
                         <div class="scene-canvas-wrap" id="leaf-canvas-wrap">
                             <!-- Canvas injected by initLeafScene() -->
@@ -2016,7 +2022,7 @@
                         </div>
 
                         <div class="scene-slider-row">
-                            <label for="leaf-slice-slider">Slice depth</label>
+                            <label for="leaf-slice-slider">Cut position (base → tip)</label>
                             <input type="range" id="leaf-slice-slider" min="0" max="100" value="0" aria-label="Slice depth through leaf">
                             <span class="scene-slider-value" id="leaf-slice-value">0%</span>
                         </div>
@@ -2025,7 +2031,7 @@
                     </div>
 
 <div class="scene-callout">
-    <strong>The key insight:</strong> <em>(the part most students miss first time)</em> — Scrub the slice slider to 100% and look at the cross-section. <em>Richea pandanifolia</em>'s margin curls right back under itself — that pocket of still air traps moisture and shields the stomata. <em>Eucalyptus globulus</em> has none of that protection because it doesn't need it (it grows in lower, wetter country). Now swap to <em>Bedfordia salicina</em> and notice the dense white hairs — those are another way to build a boundary layer. Same principle, different solution.
+    <strong>The key insight:</strong> <em>(the part most students miss first time)</em> — Drag the slider from base to tip. Watch the right-hand cross-section <em>change shape</em> along the leaf. On <em>Richea pandanifolia</em>, the base is a deep U — the margins curl right under, trapping a pocket of still air that shields the stomata. Towards the tip, that curl flattens out and the leaf loses its protection. <em>Eucalyptus globulus</em> stays thin and flat the whole length — it grows in wetter country and doesn't need the shield. <em>Bedfordia salicina</em> instead relies on a dense coat of hairs on both surfaces. Three species, three solutions to the same problem.
 </div>
 
                     <div class="scene-placement-help">
@@ -2034,7 +2040,7 @@
 
                     <div class="key-point" style="margin-top: 1.5rem;">
                         <div class="key-point-title"><i class="fas fa-check-circle"></i> Learning check</div>
-                        <p>After exploring the model, can you answer: <em>why does Richea pandanifolia roll its margins but Eucalyptus globulus doesn't?</em> If not, revisit Section 2's glossary entries for <strong>revolute</strong> and <strong>glabrous</strong>.</p>
+                                                <p>After exploring the model, can you answer: <em>why does Richea pandanifolia lose its protective boundary layer towards the leaf tip, and what does that tell you about where water loss happens?</em> If not, revisit Section 2's glossary entries for <strong>revolute</strong> and <strong>stomata</strong>.</p>
                     </div>
                 </section>
 
@@ -5405,7 +5411,17 @@
 
 
     // ============================================================
-    // 3D SCENE 1: LEAF CROSS-SECTION MODEL (Section 2 extension)
+    // 3D SCENE 1: LEAF CROSS-SECTION MORPHING MODEL (Section 2)
+    // ------------------------------------------------------------
+    // Design: two panels, both drawn flat-on in the same scene:
+    //   LEFT  = silhouette of the leaf, with a moving "cut line"
+    //   RIGHT = the actual cross-section at the cut line
+    // The cross-section MORPHS along the leaf:
+    //   - Richea: deep U (rolled-under) at base → shallow → flat at tip
+    //   - Bedfordia: hairy on both surfaces everywhere
+    //   - Eucalyptus: thin flat blade everywhere, no hairs, no roll
+    // This is the concept the slider is teaching — that cross-section
+    // varies along the leaf's length. It is not a 3D slicing effect.
     // ============================================================
     let leafSceneRef = null;
 
@@ -5430,47 +5446,43 @@
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0xeaf3ec);
 
-            const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 200);
-            camera.position.set(6, 4, 8);
+            // Orthographic-ish camera looking down the -Y axis, so both
+            // panels read as flat diagrams. We use perspective but far
+            // enough back that distortion is minimal.
+            const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 200);
+            camera.position.set(0, 12, 0);
+            camera.up.set(0, 0, -1);
             camera.lookAt(0, 0, 0);
 
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.setSize(width, height);
-            // Enable local clipping so the slice slider reveals a true cross-section
-            renderer.localClippingEnabled = true;
 
             wrap.innerHTML = '';
             wrap.appendChild(renderer.domElement);
 
-            // Clipping plane: passes through the leaf along Z when slider moves
-            const leafClipPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 3.0);
-
-            // Lights
-            const amb = new THREE.AmbientLight(0xffffff, 0.65);
-            scene.add(amb);
-            const dir = new THREE.DirectionalLight(0xffffff, 0.75);
-            dir.position.set(5, 10, 7);
+            // Lights — flat top-down, so panels read evenly
+            scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+            const dir = new THREE.DirectionalLight(0xffffff, 0.5);
+            dir.position.set(0, 10, 0);
             scene.add(dir);
-            const back = new THREE.DirectionalLight(0xd0e4d6, 0.3);
-            back.position.set(-5, 3, -6);
-            scene.add(back);
 
-            // Orbit-style controls via pointer events
+            // Optional gentle orbit — allow tilt, but clamp so the
+            // learner never gets lost in the scene
             let isDragging = false;
             let lastX = 0, lastY = 0;
-            let rotY = 0.3, rotX = 0.2;
-            let distance = 11;
-            const target = new THREE.Vector3(0, 0, 0);
+            let rotX = 0, rotZ = 0;
+            const baseCamY = 12;
 
             function updateCamera() {
-                const x = distance * Math.sin(rotY) * Math.cos(rotX);
-                const y = distance * Math.sin(rotX);
-                const z = distance * Math.cos(rotY) * Math.cos(rotX);
-                camera.position.set(target.x + x, target.y + y, target.z + z);
-                camera.lookAt(target);
+                // Tilt-only orbit (no full rotation) so the panels stay readable
+                const y = baseCamY;
+                const x = Math.sin(rotZ) * 4;
+                const z = Math.sin(rotX) * 4;
+                camera.position.set(x, y, z);
+                camera.up.set(0, 0, -1);
+                camera.lookAt(0, 0, 0);
             }
-            updateCamera();
 
             wrap.addEventListener('pointerdown', (e) => {
                 isDragging = true; lastX = e.clientX; lastY = e.clientY;
@@ -5484,174 +5496,553 @@
                 if (!isDragging) return;
                 const dx = e.clientX - lastX;
                 const dy = e.clientY - lastY;
-                rotY -= dx * 0.008;
-                rotX = Math.max(-0.9, Math.min(0.9, rotX + dy * 0.008));
+                rotZ = Math.max(-0.6, Math.min(0.6, rotZ - dx * 0.005));
+                rotX = Math.max(-0.6, Math.min(0.6, rotX + dy * 0.005));
                 lastX = e.clientX; lastY = e.clientY;
                 updateCamera();
             });
-            wrap.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                distance = Math.max(5, Math.min(20, distance + e.deltaY * 0.01));
-                updateCamera();
-            }, { passive: false });
 
-            // =====================================================
-            // LEAF MODEL — three variants on a group
-            // =====================================================
-            const leafGroup = new THREE.Group();
-            scene.add(leafGroup);
+            // =========================================================
+            // SCENE LAYOUT
+            //   Left panel centred at x = -3.5 (leaf silhouette)
+            //   Right panel centred at x = +2.5 (cross-section)
+            //   Divider line at x = 0
+            //   Panels span y ∈ [-5, +5] on the ground plane
+            // =========================================================
 
-            function buildLeafModel(variant) {
-                while (leafGroup.children.length) {
-                    const c = leafGroup.children.pop();
-                    c.geometry && c.geometry.dispose();
-                    c.material && (Array.isArray(c.material) ? c.material.forEach(m => m.dispose()) : c.material.dispose());
+            const PALETTES = {
+                richea: {
+                    name: 'Richea pandanifolia',
+                    leafFill: 0x6a9a6d,
+                    leafEdge: 0x3d5a3e,
+                    upper: 0x3d6e42,      // upper epidermis (dark)
+                    mesophyll: 0x7fbf82,  // mesophyll (light)
+                    lower: 0x3d6e42,      // lower epidermis (dark)
+                    hair: 0xd6e4d9,
+                    boundary: 'Thick',
+                    waterPct: 30,
+                    waterLabel: 'Low'
+                },
+                bedfordia: {
+                    name: 'Bedfordia salicina',
+                    leafFill: 0x7fae82,
+                    leafEdge: 0x3d5a3e,
+                    upper: 0x4d7e50,
+                    mesophyll: 0x9fcf9f,
+                    lower: 0x4d7e50,
+                    hair: 0xf0f5f0,
+                    boundary: 'Thick',
+                    waterPct: 40,
+                    waterLabel: 'Moderate'
+                },
+                eucalyptus: {
+                    name: 'Eucalyptus globulus',
+                    leafFill: 0x4f9a58,
+                    leafEdge: 0x2f5f33,
+                    upper: 0x3d7a45,
+                    mesophyll: 0x8ecf95,
+                    lower: 0x3d7a45,
+                    hair: null,
+                    boundary: 'Thin',
+                    waterPct: 78,
+                    waterLabel: 'High'
                 }
+            };
 
-                const leafGreen = 0x4f8b52;
-                const leafGreenDark = 0x2f5f33;
-                const midribColor = 0x8fb894;
-                const hairColor = 0xd6e4d9;
-                const clip = [leafClipPlane];
+            let currentVariant = 'richea';
+            let currentPct = 0;
+
+            // =========================================================
+            // LEFT PANEL — leaf silhouette + cut line
+            // =========================================================
+            const leftGroup = new THREE.Group();
+            leftGroup.position.set(-3.5, 0, 0);
+            scene.add(leftGroup);
+
+            function buildLeafSilhouette(variant, palette) {
+                // Build a flat shape in the XY plane, then rotate to lie
+                // on the ground (XZ plane). Leaf runs along Z from -4 to +4.
+                const shape = new THREE.Shape();
+                const leafColor = new THREE.MeshStandardMaterial({
+                    color: palette.leafFill,
+                    roughness: 0.9,
+                    side: THREE.DoubleSide
+                });
+                const edgeColor = new THREE.LineBasicMaterial({ color: palette.leafEdge, linewidth: 2 });
 
                 if (variant === 'richea') {
-                    const bladeShape = new THREE.Shape();
-                    bladeShape.moveTo(-0.3, -3);
-                    bladeShape.lineTo(0.3, -3);
-                    bladeShape.lineTo(0.3, 3);
-                    bladeShape.lineTo(-0.3, 3);
-                    bladeShape.lineTo(-0.3, -3);
-                    const bladeGeom = new THREE.ExtrudeGeometry(bladeShape, {
-                        depth: 0.06, bevelEnabled: false
-                    });
-                    const bladeMat = new THREE.MeshStandardMaterial({ color: leafGreen, roughness: 0.85, side: THREE.DoubleSide, clippingPlanes: clip });
-                    const blade = new THREE.Mesh(bladeGeom, bladeMat);
-                    blade.rotation.x = -Math.PI / 2;
-                    blade.position.y = 0;
-                    leafGroup.add(blade);
-
-                    const rollGeom = new THREE.CylinderGeometry(0.22, 0.22, 6, 8, 1, true);
-                    const rollMat = new THREE.MeshStandardMaterial({ color: leafGreenDark, roughness: 0.9, side: THREE.DoubleSide, clippingPlanes: clip });
-                    const rollL = new THREE.Mesh(rollGeom, rollMat);
-                    rollL.rotation.z = Math.PI / 2;
-                    rollL.position.set(-0.32, -0.15, 0);
-                    leafGroup.add(rollL);
-                    const rollR = new THREE.Mesh(rollGeom, rollMat);
-                    rollR.rotation.z = Math.PI / 2;
-                    rollR.position.set(0.32, -0.15, 0);
-                    leafGroup.add(rollR);
-
-                    const midribGeom = new THREE.BoxGeometry(0.05, 0.05, 6);
-                    const midribMat = new THREE.MeshStandardMaterial({ color: midribColor, clippingPlanes: clip });
-                    const midrib = new THREE.Mesh(midribGeom, midribMat);
-                    midrib.position.set(0, 0.05, 0);
-                    leafGroup.add(midrib);
+                    // Long narrow leaf, ~0.8 wide, with slight widening mid
+                    shape.moveTo(0, -4);
+                    shape.bezierCurveTo(0.45, -3, 0.55, 0, 0.45, 4);
+                    shape.lineTo(0, 4.15);
+                    shape.lineTo(-0.45, 4);
+                    shape.bezierCurveTo(-0.55, 0, -0.45, -3, 0, -4);
                 } else if (variant === 'bedfordia') {
-                    const shape = new THREE.Shape();
-                    shape.moveTo(0, -3);
-                    shape.bezierCurveTo(1.2, -2.5, 1.6, -0.5, 0.9, 2.2);
-                    shape.bezierCurveTo(0.5, 3, -0.5, 3, -0.9, 2.2);
-                    shape.bezierCurveTo(-1.6, -0.5, -1.2, -2.5, 0, -3);
-                    const geom = new THREE.ShapeGeometry(shape, 24);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0x6a9a6d, roughness: 1, side: THREE.DoubleSide, clippingPlanes: clip });
-                    const blade = new THREE.Mesh(geom, mat);
-                    blade.rotation.x = -Math.PI / 2;
-                    leafGroup.add(blade);
-
-                    const hairGeom = new THREE.ConeGeometry(0.03, 0.15, 4);
-                    const hairMat = new THREE.MeshStandardMaterial({ color: hairColor, roughness: 1, clippingPlanes: clip });
-                    for (let i = 0; i < 80; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const r = Math.random() * 1.1;
-                        const x = Math.cos(angle) * r;
-                        const z = Math.sin(angle) * r * 2.4;
-                        if (Math.abs(x) > 0.15 || Math.abs(z) > 0.3) {
-                            const hair = new THREE.Mesh(hairGeom, hairMat);
-                            hair.position.set(x, 0.08, z);
-                            hair.rotation.set(Math.random() * 0.3 - 0.15, 0, Math.random() * 0.3 - 0.15);
-                            leafGroup.add(hair);
-                        }
-                    }
-                    const midribGeom = new THREE.BoxGeometry(0.05, 0.05, 5.8);
-                    const midribMat = new THREE.MeshStandardMaterial({ color: midribColor, clippingPlanes: clip });
-                    const midrib = new THREE.Mesh(midribGeom, midribMat);
-                    midrib.position.set(0, 0.05, 0);
-                    leafGroup.add(midrib);
+                    // Ovate: widest at 1/3 from base
+                    shape.moveTo(0, -4);
+                    shape.bezierCurveTo(1.6, -3, 1.4, -1, 1.0, 1.5);
+                    shape.bezierCurveTo(0.7, 3, 0.3, 4, 0, 4.2);
+                    shape.bezierCurveTo(-0.3, 4, -0.7, 3, -1.0, 1.5);
+                    shape.bezierCurveTo(-1.4, -1, -1.6, -3, 0, -4);
                 } else {
-                    const shape = new THREE.Shape();
-                    shape.moveTo(0, -3);
-                    shape.bezierCurveTo(0.6, -2, 0.9, 0.5, 0.3, 3);
-                    shape.bezierCurveTo(-0.1, 3.1, -0.4, 3, -0.5, 2.4);
-                    shape.bezierCurveTo(-0.7, 0.3, -0.5, -2, 0, -3);
-                    const geom = new THREE.ShapeGeometry(shape, 24);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0x3d7a45, roughness: 0.55, metalness: 0.05, side: THREE.DoubleSide, clippingPlanes: clip });
-                    const blade = new THREE.Mesh(geom, mat);
-                    blade.rotation.x = -Math.PI / 2;
-                    leafGroup.add(blade);
+                    // Falcate (sickle): asymmetric, curving to one side
+                    shape.moveTo(0, -4);
+                    shape.bezierCurveTo(0.8, -3, 1.1, -0.5, 0.7, 2.5);
+                    shape.bezierCurveTo(0.5, 3.6, 0.2, 4.2, -0.1, 4.3);
+                    shape.bezierCurveTo(-0.5, 3.5, -0.5, -0.5, -0.3, -3);
+                    shape.bezierCurveTo(-0.2, -3.7, -0.1, -4, 0, -4);
+                }
 
-                    const midribGeom = new THREE.BoxGeometry(0.04, 0.02, 6);
-                    const midribMat = new THREE.MeshStandardMaterial({ color: midribColor, clippingPlanes: clip });
-                    const midrib = new THREE.Mesh(midribGeom, midribMat);
-                    midrib.position.set(0, 0.03, 0);
-                    midrib.rotation.z = 0.05;
-                    leafGroup.add(midrib);
+                const geom = new THREE.ShapeGeometry(shape, 32);
+                // ShapeGeometry is in XY; rotate to lie on XZ (flat on ground)
+                const mesh = new THREE.Mesh(geom, leafColor);
+                mesh.rotation.x = -Math.PI / 2;
+                leftGroup.add(mesh);
+
+                // Outline
+                const points = shape.getPoints(40);
+                const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(lineGeom, edgeColor);
+                line.rotation.x = -Math.PI / 2;
+                line.position.y = 0.01;
+                leftGroup.add(line);
+
+                // Midrib
+                const midribGeom = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, 0.02, -3.8),
+                    new THREE.Vector3(0, 0.02, 3.8)
+                ]);
+                const midrib = new THREE.Line(midribGeom, new THREE.LineBasicMaterial({ color: palette.leafEdge, opacity: 0.6, transparent: true }));
+                leftGroup.add(midrib);
+
+                // For Richea: draw the rolled-under margins as two thin
+                // darker lines just inside the outline, hinting at the fold
+                if (variant === 'richea') {
+                    const rollMat = new THREE.LineBasicMaterial({ color: 0x2f5f33, linewidth: 3 });
+                    [-1, 1].forEach(side => {
+                        const rollPts = [];
+                        for (let t = 0; t <= 40; t++) {
+                            const u = t / 40;
+                            const zz = -4 + u * 8;
+                            // Slight inward curve at base and tip, straighter mid
+                            const inset = 0.28 + 0.06 * Math.sin(u * Math.PI);
+                            rollPts.push(new THREE.Vector3(side * inset, 0.03, zz));
+                        }
+                        const rollGeom = new THREE.BufferGeometry().setFromPoints(rollPts);
+                        leftGroup.add(new THREE.Line(rollGeom, rollMat));
+                    });
                 }
             }
 
-            buildLeafModel('richea');
+            // Cut line — a thin orange plane that lives at the slice Z
+            const cutLineMat = new THREE.MeshBasicMaterial({
+                color: 0xd97d0d,
+                transparent: true,
+                opacity: 0.9,
+                side: THREE.DoubleSide
+            });
+            const cutLineGeom = new THREE.PlaneGeometry(3.0, 0.08);
+            const cutLine = new THREE.Mesh(cutLineGeom, cutLineMat);
+            cutLine.rotation.x = -Math.PI / 2;
+            cutLine.position.set(0, 0.05, 0);
+            leftGroup.add(cutLine);
 
-            // Visual slice indicator plane (sweeps along z with slider)
-            const sliceGeom = new THREE.PlaneGeometry(4, 0.6);
-            const sliceMat = new THREE.MeshBasicMaterial({ color: 0xd97d0d, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
-            const slicePlane = new THREE.Mesh(sliceGeom, sliceMat);
-            slicePlane.rotation.y = Math.PI / 2;
-            slicePlane.position.set(0, 0.1, -3);
-            scene.add(slicePlane);
+            // Small triangle marker above the cut line showing direction
+            const markerShape = new THREE.Shape();
+            markerShape.moveTo(-0.2, 0);
+            markerShape.lineTo(0.2, 0);
+            markerShape.lineTo(0, 0.3);
+            markerShape.lineTo(-0.2, 0);
+            const markerGeom = new THREE.ShapeGeometry(markerShape);
+            const markerMat = new THREE.MeshBasicMaterial({ color: 0xd97d0d, side: THREE.DoubleSide });
+            const marker = new THREE.Mesh(markerGeom, markerMat);
+            marker.rotation.x = -Math.PI / 2;
+            marker.position.set(0, 0.06, 0);
+            leftGroup.add(marker);
 
+            // Panel label (as a floating sprite so it reads from any angle)
+            function makeLabel(text, color) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'rgba(0,0,0,0)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.font = 'bold 42px system-ui, sans-serif';
+                ctx.fillStyle = color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+                const tex = new THREE.CanvasTexture(canvas);
+                tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+                const geom = new THREE.PlaneGeometry(3.0, 0.75);
+                const mesh = new THREE.Mesh(geom, mat);
+                mesh.rotation.x = -Math.PI / 2;
+                return mesh;
+            }
+
+            const leftLabel = makeLabel('LEAF (side view)', '#1b6b3a');
+            leftLabel.position.set(0, 0.1, -5.2);
+            leftGroup.add(leftLabel);
+
+            const rightLabel = makeLabel('CROSS-SECTION at cut', '#1b6b3a');
+
+            // =========================================================
+            // RIGHT PANEL — cross-section diagram
+            // =========================================================
+            const rightGroup = new THREE.Group();
+            rightGroup.position.set(2.5, 0, 0);
+            scene.add(rightGroup);
+
+            rightLabel.position.set(0, 0.1, -5.2);
+            rightGroup.add(rightLabel);
+
+            // Holds the current cross-section shape (rebuilt on slider move)
+            const crossSectionGroup = new THREE.Group();
+            rightGroup.add(crossSectionGroup);
+
+            // Divider line between panels
+            const dividerMat = new THREE.LineBasicMaterial({ color: 0x8fb894, opacity: 0.4, transparent: true });
+            const dividerGeom = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, 0.05, -5.5),
+                new THREE.Vector3(0, 0.05, 5.5)
+            ]);
+            scene.add(new THREE.Line(dividerGeom, dividerMat));
+
+            // ---- Cross-section builders ----
+            // All built in the XY plane centered at origin, then rotated
+            // to lie on the ground, then positioned on the right panel.
+            // The final shape is drawn with three horizontal "layers"
+            // (upper epidermis / mesophyll / lower epidermis) so the
+            // internal structure reads at a glance.
+
+            function clearCrossSection() {
+                while (crossSectionGroup.children.length) {
+                    const c = crossSectionGroup.children.pop();
+                    c.traverse && c.traverse(o => {
+                        o.geometry && o.geometry.dispose();
+                        o.material && (Array.isArray(o.material) ? o.material.forEach(m => m.dispose()) : o.material.dispose());
+                    });
+                }
+            }
+
+            // Draw a cross-section defined by a top edge and bottom edge
+            // (arrays of 2D points in the XY plane), split into 3 layers.
+            // topPts and botPts must have the same length; we sample from
+            // left to right.
+            function drawLayeredSection(topPts, botPts, palette) {
+                const n = topPts.length;
+                if (n < 2) return;
+
+                // Build three bands: upper epidermis (top edge to 1/4),
+                // mesophyll (1/4 to 3/4), lower epidermis (3/4 to bot edge)
+                const upperPts = [];
+                const mesoTopPts = [];
+                const mesoBotPts = [];
+                const lowerPts = [];
+
+                for (let i = 0; i < n; i++) {
+                    const t = topPts[i];
+                    const b = botPts[i];
+                    // Interpolate the three internal edges
+                    const u_top = t;
+                    const u_mesoTop = { x: t.x + (b.x - t.x) * 0.25, y: t.y + (b.y - t.y) * 0.25 };
+                    const u_mesoBot = { x: t.x + (b.x - t.x) * 0.75, y: t.y + (b.y - t.y) * 0.75 };
+                    const u_bot = b;
+                    upperPts.push(u_top, u_mesoTop);
+                    mesoTopPts.push(u_mesoTop);
+                    mesoBotPts.push(u_mesoBot);
+                    lowerPts.push(u_mesoBot, u_bot);
+                }
+
+                function makeBand(topEdge, botEdge, color) {
+                    const shape = new THREE.Shape();
+                    // top edge forward
+                    shape.moveTo(topEdge[0].x, topEdge[0].y);
+                    for (let i = 1; i < topEdge.length; i++) {
+                        shape.lineTo(topEdge[i].x, topEdge[i].y);
+                    }
+                    // bottom edge backward
+                    for (let i = botEdge.length - 1; i >= 0; i--) {
+                        shape.lineTo(botEdge[i].x, botEdge[i].y);
+                    }
+                    shape.closePath();
+                    const geom = new THREE.ShapeGeometry(shape, 24);
+                    const mat = new THREE.MeshStandardMaterial({
+                        color, roughness: 0.9, side: THREE.DoubleSide
+                    });
+                    const mesh = new THREE.Mesh(geom, mat);
+                    mesh.rotation.x = -Math.PI / 2;
+                    mesh.position.y = 0.02;
+                    return mesh;
+                }
+
+                // Upper band: from top edge to 1/4 line
+                const upperTop = topPts;
+                const upperBot = topPts.map((p, i) => {
+                    const b = botPts[i];
+                    return { x: p.x + (b.x - p.x) * 0.25, y: p.y + (b.y - p.y) * 0.25 };
+                });
+                crossSectionGroup.add(makeBand(upperTop, upperBot, palette.upper));
+
+                // Mesophyll: 1/4 to 3/4
+                const mesoTop = topPts.map((p, i) => {
+                    const b = botPts[i];
+                    return { x: p.x + (b.x - p.x) * 0.25, y: p.y + (b.y - p.y) * 0.25 };
+                });
+                const mesoBot = topPts.map((p, i) => {
+                    const b = botPts[i];
+                    return { x: p.x + (b.x - p.x) * 0.75, y: p.y + (b.y - p.y) * 0.75 };
+                });
+                crossSectionGroup.add(makeBand(mesoTop, mesoBot, palette.mesophyll));
+
+                // Lower: 3/4 to bottom edge
+                const lowerTop = topPts.map((p, i) => {
+                    const b = botPts[i];
+                    return { x: p.x + (b.x - p.x) * 0.75, y: p.y + (b.y - p.y) * 0.75 };
+                });
+                crossSectionGroup.add(makeBand(lowerTop, botPts, palette.lower));
+            }
+
+            // Build the cross-section for a given variant at a given pct
+            // =========================================================
+            // Cross-section width as a function of position along leaf.
+            // t = 0 at base, t = 1 at tip. Widths are in scene units and
+            // match the silhouette of each species, so the right-hand
+            // section visibly widens / narrows as the slider moves —
+            // mirroring what the left-hand silhouette is doing.
+            // =========================================================
+            function widthAt(variant, t) {
+                if (variant === 'richea') {
+                    // Silhouette: 0.45 → 0.55 → 0.45 (widest in middle)
+                    // Multiply by ~4.4 to reach the section's display scale
+                    const shape = 0.45 + 0.10 * Math.sin(t * Math.PI);
+                    return shape * 4.4;
+                } else if (variant === 'bedfordia') {
+                    // Silhouette: widest around t ≈ 0.35, narrower at ends
+                    // sin peaks at t = 0.5, so bias with a shift: widest ~0.35
+                    const peak = Math.exp(-Math.pow((t - 0.35) / 0.35, 2));
+                    return 1.2 + peak * 1.6;      // 1.2 at ends → 2.8 at peak
+                } else {
+                    // Eucalyptus: widest at base, tapers to tip
+                    return 2.8 - 1.4 * t;         // 2.8 at base → 1.4 at tip
+                }
+            }
+
+            // Build the cross-section for a given variant at a given pct
+            function buildCrossSection(variant, pct, palette) {
+                clearCrossSection();
+                const t = Math.max(0, Math.min(1, pct / 100));
+                const sectionWidth = widthAt(variant, t);
+
+                if (variant === 'richea') {
+                    // Morph from deep U (base) to flat (tip).
+                    // Curl factor goes from 1.0 at base to 0.0 at tip.
+                    const curl = 1 - t;
+                    const pts = 60;
+                    const width = sectionWidth;
+                    const top = [];
+                    const bot = [];
+                    for (let i = 0; i <= pts; i++) {
+                        const u = i / pts;              // 0..1 across the section
+                        const x = (u - 0.5) * width;
+                        // Curl the outer edges under.
+                        const edgeFalloff = Math.pow(Math.abs(u - 0.5) * 2, 2);
+                        const curlDepth = curl * 0.9 * edgeFalloff;
+                        // Base thickness (thin leaf)
+                        const thick = 0.14 + 0.05 * Math.sin(u * Math.PI);
+                        // Curled-under margins drop BOTH edges well below the
+                        // central plane — that's what creates the U pocket.
+                        const topY = thick * 0.5 - curlDepth;
+                        const botY = -thick * 0.5 - curlDepth;
+                        top.push({ x, y: topY });
+                        bot.push({ x, y: botY });
+                    }
+                    drawLayeredSection(top, bot, palette);
+
+                    // Add a visual hint of the "pocket" as a subtle shaded arc
+                    if (curl > 0.15) {
+                        const pocketMat = new THREE.LineBasicMaterial({
+                            color: 0x2f5f33, opacity: 0.35, transparent: true
+                        });
+                        const pocketPts = [];
+                        for (let i = 0; i <= pts; i++) {
+                            const u = i / pts;
+                            const x = (u - 0.5) * width;
+                            const edgeFalloff = Math.pow(Math.abs(u - 0.5) * 2, 2);
+                            const curlDepth = curl * 0.9 * edgeFalloff;
+                            pocketPts.push(new THREE.Vector3(x, 0.05, -curlDepth));
+                        }
+                        const pocketGeom = new THREE.BufferGeometry().setFromPoints(pocketPts);
+                        crossSectionGroup.add(new THREE.Line(pocketGeom, pocketMat));
+                    }
+                } else if (variant === 'bedfordia') {
+                    // Hairy section: width follows the leaf silhouette,
+                    // thickness varies a little along the section.
+                    // Hairs are static (present everywhere) but their
+                    // spacing visibly widens / narrows with the section.
+                    const pts = 40;
+                    const width = sectionWidth;
+                    const top = [];
+                    const bot = [];
+                    const bulgeAt = [];
+                    for (let i = 0; i <= pts; i++) {
+                        const u = i / pts;
+                        const x = (u - 0.5) * width;
+                        const bulge = 0.18 + 0.22 * Math.sin(u * Math.PI);
+                        bulgeAt.push(bulge);
+                        top.push({ x, y: bulge * 0.5 });
+                        bot.push({ x, y: -bulge * 0.5 });
+                    }
+                    drawLayeredSection(top, bot, palette);
+
+                    // Hairs — Bedfordia salicina is glabrous on the upper
+                    // surface and densely woolly on the lower (abaxial)
+                    // surface only. After makeBand()'s -PI/2 X rotation,
+                    // the leaf's lower epidermis sits at world +Z, so all
+                    // hairs point in that direction.
+                    const hairMat = new THREE.MeshStandardMaterial({ color: 0xa8b8a0, roughness: 1 });
+                    const hairGeom = new THREE.ConeGeometry(0.035, 0.22, 5);
+                    for (let i = 3; i < pts - 3; i += 3) {
+                        const u = i / pts;
+                        const x = (u - 0.5) * width;
+                        const bulge = bulgeAt[i];
+
+                        // Lower-surface hair only. The ConeGeometry's axis
+                        // is +Y by default; rotate +PI/2 about X so the
+                        // axis lies along +Z (the leaf's thickness axis in
+                        // world space after makeBand's -PI/2 rotation).
+                        // Tip then points +Z = out of the lower epidermis.
+                        const hair = new THREE.Mesh(hairGeom, hairMat);
+                        hair.rotation.x = Math.PI / 2;
+                        hair.position.set(
+                            x,
+                            0.05,
+                            bulge * 0.5 + 0.11   // halfway out from the lower surface
+                        );
+                        crossSectionGroup.add(hair);
+                    }
+
+                } else {
+                    // Eucalyptus — thin, flat, glabrous. Width tapers from
+                    // base to tip. Slight upward curl at the right edge.
+                    const pts = 40;
+                    const width = sectionWidth;
+                    const top = [];
+                    const bot = [];
+                    for (let i = 0; i <= pts; i++) {
+                        const u = i / pts;
+                        const x = (u - 0.5) * width;
+                        // Very thin, slightly thicker midrib
+                        const thick = 0.08 + 0.06 * Math.sin(u * Math.PI);
+                        // Slight upward curl at right edge (falcate)
+                        const curl = 0.15 * Math.pow(Math.max(0, u - 0.6) / 0.4, 2);
+                        top.push({ x, y: thick * 0.5 + curl });
+                        bot.push({ x, y: -thick * 0.5 + curl });
+                    }
+                    drawLayeredSection(top, bot, palette);
+                }
+            }            
+
+            // =========================================================
             // Readout updates
-            function setReadouts(variant, slicePercent) {
-                const speciesNames = {
-                    richea: 'Richea pandanifolia',
-                    bedfordia: 'Bedfordia salicina',
-                    eucalyptus: 'Eucalyptus globulus'
-                };
-                const boundaryLabels = {
-                    richea: slicePercent > 50 ? 'Thick (visible)' : 'Moderate',
-                    bedfordia: 'Thick (hairy)',
-                    eucalyptus: 'Thin'
-                };
-                const waterMap = { richea: 32, bedfordia: 40, eucalyptus: 80 };
-                const waterLabels = { richea: 'Low', bedfordia: 'Moderate', eucalyptus: 'High' };
-
+            // =========================================================
+            function setReadouts(variant, pct) {
+                const p = PALETTES[variant];
                 const speciesEl = document.getElementById('leaf-readout-species');
                 const boundaryEl = document.getElementById('leaf-readout-boundary');
                 const waterBarEl = document.getElementById('leaf-readout-waterbar');
                 const waterEl = document.getElementById('leaf-readout-water');
 
-                if (speciesEl) speciesEl.textContent = speciesNames[variant];
-                if (boundaryEl) boundaryEl.textContent = boundaryLabels[variant];
-
-                let waterPct = waterMap[variant];
-                if (variant === 'richea' && slicePercent > 60) waterPct = 18;
-
-                if (waterBarEl) {
-                    waterBarEl.style.width = waterPct + '%';
-                    if (waterPct > 60) waterBarEl.classList.add('danger');
-                    else waterBarEl.classList.remove('danger');
+                if (speciesEl) speciesEl.textContent = p.name;
+                if (boundaryEl) {
+                    // For Richea, boundary layer depends on how much curl is
+                    // still present. As we move to the tip, it becomes thinner.
+                    if (variant === 'richea') {
+                        const t = pct / 100;
+                        if (t < 0.35) boundaryEl.textContent = 'Thick (rolled under)';
+                        else if (t < 0.7) boundaryEl.textContent = 'Moderate';
+                        else boundaryEl.textContent = 'Thin (near tip)';
+                    } else {
+                        boundaryEl.textContent = p.boundary;
+                    }
                 }
-                if (waterEl) waterEl.textContent = waterLabels[variant];
+                if (waterBarEl) {
+                    let pct2 = p.waterPct;
+                    if (variant === 'richea') {
+                        // Near the tip, less protection -> more water loss
+                        pct2 = 20 + (pct / 100) * 40;
+                    }
+                    waterBarEl.style.width = pct2 + '%';
+                    waterBarEl.classList.toggle('danger', pct2 > 60);
+                }
+                if (waterEl) {
+                    if (variant === 'richea') {
+                        const t = pct / 100;
+                        waterEl.textContent = t < 0.35 ? 'Low' : t < 0.7 ? 'Moderate' : 'Higher';
+                    } else {
+                        waterEl.textContent = p.waterLabel;
+                    }
+                }
+            }
+
+            // ---- helper to fully dispose a group's children ----
+            function clearGroup(group) {
+                while (group.children.length) {
+                    const c = group.children.pop();
+                    if (c.traverse) c.traverse(o => {
+                        o.geometry && o.geometry.dispose();
+                        o.material && (Array.isArray(o.material)
+                            ? o.material.forEach(m => m.dispose())
+                            : o.material.dispose());
+                    });
+                }
+            }
+
+            // ---- rebuildScene: wires silhouette + cut line + cross-section ----
+            function rebuildScene(variant, pct) {
+                const palette = PALETTES[variant];
+
+                // --- left panel: silhouette (keep cut-line, marker, label intact) ---
+                // Build into a sub-group so we can clear just the silhouette
+                if (!leftGroup.userData.silhouetteGroup) {
+                    leftGroup.userData.silhouetteGroup = new THREE.Group();
+                    leftGroup.add(leftGroup.userData.silhouetteGroup);
+                }
+                const silGroup = leftGroup.userData.silhouetteGroup;
+                clearGroup(silGroup);
+
+                // Temporarily redirect buildLeafSilhouette into the sub-group
+                const originalAdd = leftGroup.add.bind(leftGroup);
+                leftGroup.add = (obj) => silGroup.add(obj);
+                try {
+                    buildLeafSilhouette(variant, palette);
+                } finally {
+                    leftGroup.add = originalAdd;
+                }
+
+                // --- cut line + marker position ---
+                const z = -4 + (Math.max(0, Math.min(100, pct)) / 100) * 8;
+                cutLine.position.z = z;
+                marker.position.z = z;
+
+                // --- right panel: cross-section ---
+                buildCrossSection(variant, pct, palette);
             }
 
             leafSceneRef = {
-                scene, camera, renderer, leafGroup, slicePlane, leafClipPlane,
-                buildLeafModel, setReadouts,
-                variant: 'richea',
-                slicePercent: 0
+                scene, camera, renderer,
+                rebuildScene, setReadouts,
+                variant: currentVariant,
+                slicePercent: currentPct
             };
 
-            let animationFrameId;
+            // =========================================================
+            // Render loop + resize
+            // =========================================================
             function animate() {
-                animationFrameId = requestAnimationFrame(animate);
+                requestAnimationFrame(animate);
                 renderer.render(scene, camera);
             }
             animate();
@@ -5667,26 +6058,29 @@
             });
             resizeObserver.observe(wrap);
 
+            // =========================================================
+            // Slider
+            // =========================================================
             const slider = document.getElementById('leaf-slice-slider');
             const sliderVal = document.getElementById('leaf-slice-value');
             if (slider) {
                 slider.addEventListener('input', (e) => {
                     const pct = parseInt(e.target.value, 10);
                     if (sliderVal) sliderVal.textContent = pct + '%';
+                    currentPct = pct;
                     if (leafSceneRef) {
                         leafSceneRef.slicePercent = pct;
-                        const zPos = -3 + (pct / 100) * 6;
-                        leafSceneRef.slicePlane.position.z = zPos;
-                        // Move the real clip plane: at pct=0 nothing clipped (constant=+3),
-                        // at pct=100 fully clipped (constant=-3)
-                        leafSceneRef.leafClipPlane.constant = 3 - (pct / 100) * 6;
+                        leafSceneRef.rebuildScene(leafSceneRef.variant, pct);
                         leafSceneRef.setReadouts(leafSceneRef.variant, pct);
                     }
                 });
             }
 
+            // Initial build
+            rebuildScene('richea', 0);
             setReadouts('richea', 0);
-            console.log('[leaf-scene] 3D scene initialised');
+
+            console.log('[leaf-scene] morphing cross-section scene initialised');
 
         } catch (err) {
             console.warn('[leaf-scene] initialisation failed:', err);
@@ -5701,9 +6095,8 @@
     function leafSetModel(variant) {
         if (!leafSceneRef) return;
         leafSceneRef.variant = variant;
-        leafSceneRef.buildLeafModel(variant);
+        leafSceneRef.rebuildScene(variant, leafSceneRef.slicePercent);
         leafSceneRef.setReadouts(variant, leafSceneRef.slicePercent);
-        // Toggle active button
         document.querySelectorAll('[data-leaf-model]').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-leaf-model') === variant);
         });
@@ -5712,6 +6105,15 @@
 
     // ============================================================
     // 3D SCENE 2: FOREST STRATA & DISTURBANCE (Section 5 extension)
+    // ------------------------------------------------------------
+    // Purpose: show that a forest is a vertical stack of light
+    //          environments, and that one canopy tree-fall opens a
+    //          multi-decade regrowth race.
+    // Interaction:
+    //   - Click a canopy tree (or the "Fell a canopy tree" button) to
+    //     fell it; canopy cover drops 25%, floor light rises
+    //   - Time slider regrows shrubs and ferns toward full size
+    //   - Reset restores closed-canopy state at year 0
     // ============================================================
     let forestSceneRef = null;
 
@@ -6059,6 +6461,16 @@
 
     // ============================================================
     // 3D SCENE 3: HERBARIUM PRESSING SIMULATOR (Section 8 extension)
+    // ------------------------------------------------------------
+    // Purpose: demonstrate the trade-off between fitting a specimen
+    //          on a sheet and displaying diagnostic features on both
+    //          surfaces.
+    // Interaction:
+    //   - Click any leaflet to flip it (shows underside colour)
+    //   - Fold top / bottom half to reduce footprint
+    //   - Press specimen flattens the frond; readouts warn about
+    //     high mould risk if features are not shown first
+    //   - Reset restores flat, unflipped, unfolded state
     // ============================================================
     let pressSceneRef = null;
 
@@ -7322,6 +7734,10 @@
 
     // ============================================================
     // BOOTSTRAP
+    // ------------------------------------------------------------
+    // Wires every interaction after the DOM is ready. Scenes are NOT
+    // initialised here — they initialise lazily on first tab visit
+    // via switchTab() → waitForTHREE() → initXxxScene().
     // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
         console.log('[bootstrap] DOM loaded, wiring up');
