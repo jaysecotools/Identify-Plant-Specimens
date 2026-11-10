@@ -6194,19 +6194,9 @@
                 const baseY = avgY + 0.5;
                 const step = 0.30;
 
-                // Helper: draw a thin leader line from a label to a feature point
-                function addLeader(fromX, fromZ, toX, toZ) {
-                    const g = new THREE.BufferGeometry().setFromPoints([
-                        new THREE.Vector3(fromX, 0.09, fromZ),
-                        new THREE.Vector3(toX,   0.09, toZ)
-                    ]);
-                    const l = new THREE.Line(g, new THREE.LineBasicMaterial({
-                        color: 0x3d5a3e, transparent: true, opacity: 0.85,
-                        depthTest: false
-                    }));
-                    l.renderOrder = 998;
-                    labelGroup.add(l);
-                }
+// Leader lines removed — labels sit as a stack on the right.
+// Kept as a no-op so the existing addLeader(...) call sites stay valid.
+function addLeader() { /* intentionally empty */ }
 
                 // Feature target points along the section (approx x,y at
                 // the middle of the section).
