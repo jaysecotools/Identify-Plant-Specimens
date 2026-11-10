@@ -6164,8 +6164,24 @@
                     const canvas = document.createElement('canvas');
                     canvas.width = 1024; canvas.height = 160;
                     const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = 'rgba(255,255,255,0.95)';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+const padX = 28, padY = 18, r = 18;
+const boxX = padX, boxY = padY;
+const boxW = canvas.width - padX * 2;
+const boxH = canvas.height - padY * 2;
+ctx.fillStyle = 'rgba(255,255,255,0.88)';
+ctx.beginPath();
+ctx.moveTo(boxX + r, boxY);
+ctx.lineTo(boxX + boxW - r, boxY);
+ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
+ctx.lineTo(boxX + boxW, boxY + boxH - r);
+ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - r, boxY + boxH);
+ctx.lineTo(boxX + r, boxY + boxH);
+ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
+ctx.lineTo(boxX, boxY + r);
+ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
+ctx.closePath();
+ctx.fill();
                     ctx.font = 'bold 64px system-ui, sans-serif';
                     ctx.fillStyle = color || '#1b3b23';
                     ctx.textAlign = 'center';
@@ -6183,7 +6199,7 @@
                     const mesh = new THREE.Mesh(geom, mat);
                     mesh.rotation.x = -Math.PI / 2;
                     mesh.position.set(x, y, z);
-                    mesh.renderOrder = 999;    // draw after everything else
+                    mesh.renderOrder = 900 + labelGroup.children.length;    // draw after everything else
                     labelGroup.add(mesh);
                 }
 
@@ -6192,7 +6208,7 @@
                 // a stack of pointers rather than overlapping.
                 const labelX = avgX + 2.6;
                 const baseY = avgY + 0.5;
-                const step = 0.30;
+                const step = 0.34;
 
 // Leader lines removed — labels sit as a stack on the right.
 // Kept as a no-op so the existing addLeader(...) call sites stay valid.
